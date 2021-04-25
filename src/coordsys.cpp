@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QPalette>
 #include <QString>
+#include <QWidget>
 
 #include <algorithm> // std::reverse
 #include <cmath>     // for axis scaling (and mathematical functions)
@@ -63,7 +64,7 @@ int Axis::to_w(double axis_value, bool scaled) const {
           return sf * (axis_value - ad.min) + mo;
           break;
         }
-      case Scaling::log10:
+      case Scaling::logarithmic:
         {
           return sf * (std::log10(axis_value) - ad.min) + mo;
           return 0;
@@ -84,7 +85,7 @@ double Axis::to_a(int nvalue, bool scaled) const {
           return (nvalue - mo) / sf + ad.min;
           break;
         }
-      case Scaling::log10:
+      case Scaling::logarithmic:
         {
           return std::pow(10, (nvalue - mo) / sf + ad.min);
           return 0;
@@ -94,7 +95,7 @@ double Axis::to_a(int nvalue, bool scaled) const {
   }
 }
 
-void Axis::draw(QPainter *qp, int offset) {
+void Axis::draw(QPainter* qp, int offset) {
 
   // Create font
   qp->setFont(QFont("Helvetica", 12, QFont::Normal));
@@ -138,7 +139,7 @@ void Axis::draw(QPainter *qp, int offset) {
         qp->restore();
 
         // notify user on log10 scaling of axis
-        if (ad.scaling == Scaling::log10) {
+        if (ad.scaling == Scaling::logarithmic) {
           qp->save();
           qp->setFont(QFont("Helvetica", 14, QFont::Normal));
           QFontMetrics fmbx = qp->fontMetrics();
@@ -185,7 +186,7 @@ void Axis::draw(QPainter *qp, int offset) {
         qp->restore();
 
         // notify user on log10 scaling of axis
-        if (ad.scaling == Scaling::log10) {
+        if (ad.scaling == Scaling::logarithmic) {
           qp->save();
           qp->setFont(QFont("Helvetica", 14, QFont::Normal));
           QFontMetrics fmby = qp->fontMetrics();
@@ -235,8 +236,9 @@ std::vector<double> Axis::get_major_pos() const {
         }
         break;
       }
-    case Scaling::log10: // ignore user settings of anchor, major_delta and
-                         // minor_intervals and create standardized log10 axis
+    case Scaling::logarithmic: // ignore user settings of anchor, major_delta
+                               // and minor_intervals and create standardized
+                               // log10 axis
       {
         double value = 1.0;                         // standard anchor value
         while (value >= ad.min) {                   // sweep left
@@ -265,7 +267,7 @@ std::vector<double> Axis::get_major_pos() const {
 } // get_major_pos()
 
 std::vector<double>
-Axis::get_minor_pos(const std::vector<double> &major_pos) const {
+Axis::get_minor_pos(const std::vector<double>& major_pos) const {
   // return coodinates of minor axis notches
   // (excluding the position of the major notches)
 
@@ -322,7 +324,7 @@ Axis::get_minor_pos(const std::vector<double> &major_pos) const {
 
         break;
       }
-    case Scaling::log10:
+    case Scaling::logarithmic:
       {
 
         { // anything before the leftmost major notch?
@@ -375,7 +377,7 @@ Axis::get_minor_pos(const std::vector<double> &major_pos) const {
 Coordsys::Coordsys(Axis x, Axis y, coordsys_data cd)
     : x(x), y(y), cd(cd), title(cd.title.c_str()) {}
 
-void Coordsys::draw(QPainter *qp) {
+void Coordsys::draw(QPainter* qp) {
 
   qp->save();
 
@@ -421,4 +423,32 @@ void Coordsys::draw(QPainter *qp) {
   QRegion clip_area(
       QRect(x.nmin(), y.nmax(), x.nmax() - x.nmin(), y.nmin() - y.nmax()));
   qp->setClipRegion(clip_area);
+}
+
+void Coordsys::adjust_to_resized_widget(int new_w_width, int new_w_height) {
+
+  // needs adjustment of axis if corresponding widget size has changed
+  if (new_w_width != x.widget_size()) {
+
+    widget_axis_data wdx = x.get_widget_axis_data();
+    axis_data adx = x.get_axis_data();
+
+    // set new width and create new axis
+    int delta_x = new_w_width - x.widget_size();
+    wdx.w_size = new_w_width;
+    wdx.a_length += delta_x;
+    x = Axis(wdx, adx);
+  }
+
+  if (new_w_height != y.widget_size()) {
+
+    widget_axis_data wdy = y.get_widget_axis_data();
+    axis_data ady = y.get_axis_data();
+
+    // set new width and create new axis
+    int delta_y = new_w_height - y.widget_size();
+    wdy.w_size = new_w_height;
+    wdy.a_length += delta_y;
+    y = Axis(wdy, ady);
+  }
 }

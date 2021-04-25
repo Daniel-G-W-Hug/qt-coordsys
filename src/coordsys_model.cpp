@@ -122,3 +122,15 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
 
   return new_id.id;
 }
+
+void Coordsys_model::clear() {
+  unique_id = 0;
+
+  pt.clear();
+  pt_mark.clear();
+  pt_id.clear();
+
+  line.clear();
+  line_mark.clear();
+  line_id.clear();
+}

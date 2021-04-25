@@ -9,6 +9,15 @@
 cmake_minimum_required(VERSION 3.13)
 
 #
+# to use gcc-10 and g++-10 instead of default c / c++ (must come before project
+# line)
+#
+#[[
+# set(CMAKE_C_COMPILER "gcc-10")
+# set(CMAKE_CXX_COMPILER "g++-10")
+#]]
+
+#
 # project name (=identical to executable name)
 #
 project(qt-coordsys)
@@ -34,18 +43,18 @@ set(CMAKE_AUTOUIC ON)
 # add include directories for header files)
 #
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
-)
+# include_directories(
+# /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+# )
 
 # Can manually add the sources using the set command as follows: set(SOURCES
 # hello.cpp)
 
 # However, the file(GLOB...) allows for wildcard additions:
-set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys_view.cpp
-            src/coordsys_model.cpp)
-set(HEADERS include/coordsys.hpp include/w_coordsys_view.hpp
-            include/coordsys_model.hpp)
+set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
+            src/coordsys_model.cpp src/w_statusbar.cpp)
+set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
+            include/coordsys_model.hpp include/w_statusbar.hpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 

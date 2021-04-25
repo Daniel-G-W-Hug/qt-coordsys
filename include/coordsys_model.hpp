@@ -81,6 +81,9 @@ public:
   [[maybe_unused]] int add_l(const std::vector<pt2d>& vp_in,
                              const line2d_mark m = line2d_mark_default);
 
+  // reset model to empty state, e.g. for reuse in new model
+  void clear();
+
 private:
   int unique_id{0}; // id = unique id, e.g. to identify each item in model
                     // assigned when model is setup using push_back calls
