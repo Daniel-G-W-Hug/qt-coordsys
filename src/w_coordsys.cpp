@@ -40,7 +40,6 @@ void w_Coordsys::resizeEvent(QResizeEvent* event) {
   if (oldSize != currentSize) {
     cs->adjust_to_resized_widget(currentSize.width(), currentSize.height());
   }
-  update();
 }
 
 void w_Coordsys::paintEvent(QPaintEvent* e) {
@@ -56,23 +55,71 @@ void w_Coordsys::draw(QPainter* qp) {
   cm->draw(qp, cs);
 }
 
+void w_Coordsys::mousePressEvent(QMouseEvent* event) {
+
+  // accept mouse presses only in hot area
+  if (event->button() == Qt::LeftButton && m_hot) {
+    m_leftBotton = true;
+  }
+  if (event->button() == Qt::RightButton && m_hot) {
+    m_rightBotton = true;
+  }
+}
+
+void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
+
+  if (event->button() == Qt::LeftButton) {
+    m_leftBotton = false;
+  }
+  if (event->button() == Qt::RightButton) {
+    m_rightBotton = false;
+  }
+}
+
 void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
 
   int nx = event->pos().x();
   int ny = event->pos().y();
 
-  // convert coordinates
-  double x_pos = cs->x.to_a(nx);
-  double y_pos = cs->y.to_a(ny);
+  if (nx != m_nx || ny != m_ny) {
+    // mouse moved to a new postion
 
-  // determine if is active cs area
-  bool hot = false;
-  if (x_pos >= cs->x.min() && x_pos <= cs->x.max() && y_pos >= cs->y.min() &&
-      y_pos <= cs->y.max()) {
-    hot = true;
+    // convert coordinates
+    double x_pos = cs->x.to_a(nx);
+    double y_pos = cs->y.to_a(ny);
+
+    // determine if mouse is in active cs area
+    bool hot = false;
+    if (x_pos >= cs->x.min() && x_pos <= cs->x.max() && y_pos >= cs->y.min() &&
+        y_pos <= cs->y.max()) {
+      hot = true;
+    }
+    m_hot = hot; // store whether mouse is still in hot area
+
+    emit mouseMoved(hot, x_pos, y_pos);
+
+    if (m_rightBotton && m_hot) {
+      double dx = x_pos - cs->x.to_a(m_nx);
+      double dy = y_pos - cs->y.to_a(m_ny);
+      // fmt::print("dx = {}, dy = {}\n", dx, dy);
+      cs->adjust_to_pan(dx, dy);
+      update();
+    }
+
+    // store current position
+    m_nx = nx;
+    m_ny = ny;
+
+    // fmt::print("m_nx = {}, m_ny = {}\n", m_nx, m_ny);
+    // fmt::print("nx = {}, ny = {}\n", nx, ny);
+    // fmt::print("delta_nx = {}, delta_ny = {}\n", delta_nx, delta_ny);
+
+    // fmt::print("hot = {}, left = {}, right = {}\n", m_hot, m_leftBotton,
+    //            m_rightBotton);
+
+    // fmt::print("nx = {}, ny = {}, x_pos = {}, y_pos = {}\n", nx, ny, x_pos,
+    //            y_pos);
   }
-
-  emit mouseMoved(hot, x_pos, y_pos);
 }
 
 void w_Coordsys::switch_to_model(int idx) {

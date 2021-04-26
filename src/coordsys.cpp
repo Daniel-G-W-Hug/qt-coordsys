@@ -452,3 +452,28 @@ void Coordsys::adjust_to_resized_widget(int new_w_width, int new_w_height) {
     y = Axis(wdy, ady);
   }
 }
+
+void Coordsys::adjust_to_pan(double dx, double dy) {
+
+  if (dx != 0.0) {
+
+    widget_axis_data wdx = x.get_widget_axis_data();
+    axis_data adx = x.get_axis_data();
+
+    // set new axis limits and create new axis
+    adx.min -= dx;
+    adx.max -= dx;
+    x = Axis(wdx, adx);
+  }
+
+  if (dy != 0.0) {
+
+    widget_axis_data wdy = y.get_widget_axis_data();
+    axis_data ady = y.get_axis_data();
+
+    // set new axis limits and create new axis
+    ady.min -= dy;
+    ady.max -= dy;
+    y = Axis(wdy, ady);
+  }
+}

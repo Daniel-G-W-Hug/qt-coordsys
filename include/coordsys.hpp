@@ -93,6 +93,7 @@ public:
   // coordsys_data get_coordsys_data() const { return cd; }
 
   void adjust_to_resized_widget(int new_w_width, int new_w_height);
+  void adjust_to_pan(double dx, double dy);
 
   Axis x;
   Axis y;
