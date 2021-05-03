@@ -17,6 +17,30 @@ w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent)
   setPalette(pal);
 
   wcs = new w_Coordsys(cs, cm, this);
+
+  wsb = new w_Statusbar(cs->x.widget_size(), this);
+
+  w1 = new QGroupBox;
+
+  QVBoxLayout* layout = new QVBoxLayout;
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+  layout->addWidget(wcs);
+  layout->addSpacing(5);
+  layout->addWidget(wsb);
+  setLayout(layout);
+
+  // link coordsys to statusbar
+  connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
+          SLOT(on_mouseMoved(bool, double, double)));
+  connect(wcs, SIGNAL(modeChanged(pz_mode)), wsb,
+          SLOT(on_modeChanged(pz_mode)));
+  connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
+  connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
+          SLOT(on_labelChanged(std::string)));
+
+  // update status bar with label of first model
+  emit wcs->labelChanged(cm->label());
 }
 
 w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
@@ -51,9 +75,18 @@ w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
   layout->addWidget(wsb);
   setLayout(layout);
 
-  // connect slider to model selection
+  // link slider to model selection
   connect(slider, SIGNAL(valueChanged(int)), wcs, SLOT(switch_to_model(int)));
   connect(slider, SIGNAL(valueChanged(int)), wsb, SLOT(on_modelChanged(int)));
+  // link coordsys to statusbar
   connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
           SLOT(on_mouseMoved(bool, double, double)));
+  connect(wcs, SIGNAL(modeChanged(pz_mode)), wsb,
+          SLOT(on_modeChanged(pz_mode)));
+  connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
+  connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
+          SLOT(on_labelChanged(std::string)));
+
+  // update status bar with label of first model
+  emit wcs->labelChanged(vm[0]->label());
 }

@@ -1,12 +1,14 @@
 #include "w_cs_view.hpp"
 
 #include <QApplication>
+#include <exception>
+#include <iostream>
 #include <vector>
 
 Coordsys make_cs() {
   axis_data ax, ay;
-  ax.min = -2.;
-  ax.max = 2.;
+  ax.min = -4.;
+  ax.max = 4.;
   ax.direction = Direction::x;
   // ax.scaling = Scaling::logarithmic;
   ax.label = "x label";
@@ -14,11 +16,11 @@ Coordsys make_cs() {
   ax.major_delta = 1.0;
   ax.minor_intervals = 4;
 
-  ay.min = -1.1;
-  ay.max = 1.1;
+  ay.min = -3.1;
+  ay.max = 3.1;
   ay.major_anchor = 0.0;
   ay.major_delta = 1.0;
-  ay.minor_intervals = 10;
+  ay.minor_intervals = 4;
 
   // ay.min = -2;
   // ay.max = 2;
@@ -76,6 +78,8 @@ Coordsys_model make_model() {
   l1.push_back(p3);
   cm.add_l(l1);
 
+  cm.set_label("init label");
+
   return cm;
 }
 
@@ -125,6 +129,8 @@ std::vector<Coordsys_model> make_vector_of_models() {
     // add the poly line to the model
     cm.add_l(l, lm);
 
+    cm.set_label(fmt::format("t={:.3f}", t));
+
     // store the model in the vector
     vm.push_back(cm);
   }
@@ -133,28 +139,33 @@ std::vector<Coordsys_model> make_vector_of_models() {
 }
 
 int main(int argc, char* argv[]) {
-  QApplication app(argc, argv);
 
-  Coordsys cs = make_cs();
+  try {
+    QApplication app(argc, argv);
 
-  // single model case
-  // Coordsys_model cm = make_model();
-  // w_Cs_view window(&cs, &cm);
+    Coordsys cs = make_cs();
 
-  // multi model case
-  std::vector<Coordsys_model> vmodels;
-  vmodels = make_vector_of_models();
+    // single model case
+    // Coordsys_model cm = make_model();
+    // w_Cs_view window(&cs, &cm);
 
-  std::vector<Coordsys_model*> vm;
-  for (int i = 0; i < vmodels.size(); ++i) {
-    vm.push_back(&vmodels[i]);
+    // multi model case
+    std::vector<Coordsys_model> vmodels;
+    vmodels = make_vector_of_models();
+
+    std::vector<Coordsys_model*> vm;
+    for (int i = 0; i < vmodels.size(); ++i) {
+      vm.push_back(&vmodels[i]);
+    }
+    w_Cs_view window(&cs, vm);
+
+    // window.resize(600, 600);
+    window.setWindowTitle("Coordsys");
+    window.show();
+
+    return app.exec();
+
+  } catch (const std::exception& e) {
+    std::cout << e.what();
   }
-
-  w_Cs_view window(&cs, vm);
-
-  // window.resize(600, 600);
-  window.setWindowTitle("Coordsys");
-  window.show();
-
-  return app.exec();
 }

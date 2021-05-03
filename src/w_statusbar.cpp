@@ -8,7 +8,7 @@
 #include <cmath> // for axis scaling (and mathematical functions)
 
 w_Statusbar::w_Statusbar(int width, QWidget* parent)
-    : QWidget(parent), w_width(width), m_step(0) {
+    : QWidget(parent), w_width(width) {
 
   setMinimumSize(w_width, w_height);
   setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -31,12 +31,13 @@ void w_Statusbar::paintEvent(QPaintEvent* e) {
 
 void w_Statusbar::draw(QPainter* qp) {
 
-  const int nypos = 14; // ypos of all displayed strings
+  qp->save();
+
+  const int nypos = 14;       // ypos of all displayed strings
+  const int border_dist = 10; // minimum distance from left and right border
 
   // define logical coordinates (start with (0,0) in upper left corner)
   qp->setWindow(QRect(0, 0, w_width, w_height));
-
-  qp->save();
 
   qp->setBrush(QBrush(QColor(Qt::lightGray)));
   qp->setPen(QPen(Qt::lightGray, 1, Qt::SolidLine));
@@ -46,6 +47,27 @@ void w_Statusbar::draw(QPainter* qp) {
   qp->setPen(QPen(Qt::black, 1, Qt::SolidLine));
   QFontMetrics fm = qp->fontMetrics();
 
+  // print number of avialable undo steps
+  QString u = QString("#Undo: ") + QString::number(m_undo_steps);
+  int undo_len = fm.horizontalAdvance(u);
+  qp->drawText(border_dist, nypos, u);
+
+  // print current pan and zoom modes
+  QString m;
+  switch (m_mode) {
+    case pz_mode::x_and_y:
+      m = QString("Pan/Zoom: X & Y");
+      break;
+    case pz_mode::x_only:
+      m = QString("Pan/Zoom: X");
+      break;
+    case pz_mode::y_only:
+      m = QString("Pan/Zoom: Y");
+      break;
+  }
+  qp->drawText(border_dist + undo_len + 15, nypos, m);
+
+  // print (x,y)-Position of mouse pointer in hot area
   if (m_hot) {
     QString x = QString::number(m_x, 'g', 3);
     QString y = QString::number(m_y, 'g', 3);
@@ -53,8 +75,12 @@ void w_Statusbar::draw(QPainter* qp) {
     qp->drawText(w_width / 2 - fm.horizontalAdvance(s) / 2, nypos, s);
   }
 
+  // print index and (if present) label of currently displayed model
   QString step = QString("Model: ") + QString::number(m_step);
-  qp->drawText(w_width - fm.horizontalAdvance(step) - 10, nypos, step);
+  if (m_label != "") {
+    step += QString("  Label: ") + m_label.c_str();
+  }
+  qp->drawText(w_width - fm.horizontalAdvance(step) - border_dist, nypos, step);
 
   qp->restore();
 }
@@ -75,8 +101,38 @@ void w_Statusbar::on_modelChanged(int step) {
 
   if (m_step != step) {
     // update only if any value has changed
-    // fmt::print("received event: {}\n", step);
+    // fmt::print("received modelChanged event: {}\n", step);
     m_step = step;
+    update();
+  }
+}
+
+void w_Statusbar::on_modeChanged(pz_mode mode) {
+
+  if (m_mode != mode) {
+    // update only if any value has changed
+    // fmt::print("received modeChanged event: {}\n", step);
+    m_mode = mode;
+    update();
+  }
+}
+
+void w_Statusbar::on_undoChanged(int undo_steps) {
+
+  if (m_undo_steps != undo_steps) {
+    // update only if any value has changed
+    // fmt::print("received undoChanged event: {}\n", undo_steps);
+    m_undo_steps = undo_steps;
+    update();
+  }
+}
+
+void w_Statusbar::on_labelChanged(std::string label) {
+
+  if (m_label != label) {
+    // update only if any value has changed
+    // fmt::print("received labelChanged event: {}\n", label);
+    m_label = label;
     update();
   }
 }

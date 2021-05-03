@@ -81,6 +81,9 @@ public:
   [[maybe_unused]] int add_l(const std::vector<pt2d>& vp_in,
                              const line2d_mark m = line2d_mark_default);
 
+  void set_label(const std::string& new_label);
+  std::string label() { return m_label; }
+
   // reset model to empty state, e.g. for reuse in new model
   void clear();
 
@@ -97,6 +100,9 @@ private:
   std::vector<line2d> line;
   std::vector<line2d_mark> line_mark;
   std::vector<mark_id> line_id;
+
+  // model label (e.g. time stamp description)
+  std::string m_label;
 };
 
 // ----------------------------------------------------------------------------

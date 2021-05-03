@@ -25,6 +25,9 @@ private slots:
   // x, y
   void on_mouseMoved(bool hot, double x, double y);
   void on_modelChanged(int step);
+  void on_modeChanged(pz_mode mode);
+  void on_undoChanged(int undo_steps);
+  void on_labelChanged(std::string label);
 
 private:
   int w_width;
@@ -36,6 +39,15 @@ private:
   bool m_hot;      // mouse is within cs area
   double m_x, m_y; // mouse position in cs
 
-  // model step
-  int m_step;
+  // model step (default: show first step)
+  int m_step{0};
+
+  // model label
+  std::string m_label{};
+
+  // pan and zoom mode (all: no restriction)
+  pz_mode m_mode{pz_mode::x_and_y};
+
+  // number of undo steps available
+  int m_undo_steps{0};
 };

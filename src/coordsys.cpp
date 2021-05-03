@@ -15,6 +15,9 @@
 #include "fmt/ranges.h"
 
 Axis::Axis(widget_axis_data wd, axis_data ad) : wd(wd), ad(ad) {
+
+  // fmt::print("called ctor for axis\n");
+
   // assure that preconditions are met
   if (ad.max <= ad.min)
     throw std::runtime_error("Requires axis_max > axis_min length).");
@@ -51,6 +54,8 @@ Axis::Axis(widget_axis_data wd, axis_data ad) : wd(wd), ad(ad) {
         break;
       }
   }
+
+  // fmt::print("axis ctor: mo={}, sf={}\n", mo, sf);
 }
 
 // axis to widget transformation
@@ -116,17 +121,21 @@ void Axis::draw(QPainter* qp, int offset) {
         std::vector<double> major_val = get_major_pos();
         for (int i = 0; i < major_val.size(); ++i) {
           int npos = to_w(major_val[i], scaled);
-          qp->drawLine(npos, offset, npos, offset + 8);
-          // notch labels
-          QString s = QString::number(major_val[i]);
-          qp->drawText(npos - fm.horizontalAdvance(s) / 2,
-                       offset + fm.height() + 6, s);
+          if (npos >= nmin() && npos <= nmax()) { // just draw within cs area
+            qp->drawLine(npos, offset, npos, offset + 8);
+            // notch labels
+            QString s = QString::number(major_val[i]);
+            qp->drawText(npos - fm.horizontalAdvance(s) / 2,
+                         offset + fm.height() + 6, s);
+          }
         }
         // minor notches (w/o notch labels)
         std::vector<double> minor_val = get_minor_pos(major_val);
         for (int i = 0; i < minor_val.size(); ++i) {
           int npos = to_w(minor_val[i], scaled);
-          qp->drawLine(npos, offset, npos, offset + 5);
+          if (npos >= nmin() && npos <= nmax()) { // just draw within cs area
+            qp->drawLine(npos, offset, npos, offset + 5);
+          }
         }
 
         // x axis label
@@ -161,17 +170,23 @@ void Axis::draw(QPainter* qp, int offset) {
         std::vector<double> major_val = get_major_pos();
         for (int i = 0; i < major_val.size(); ++i) {
           int npos = to_w(major_val[i], scaled);
-          qp->drawLine(offset - 8, npos, offset, npos);
-          // notch labels
-          QString s = QString::number(major_val[i]);
-          qp->drawText(offset - fm.horizontalAdvance(s) - 11,
-                       npos + fm.height() / 3, s);
+          if (npos <= nmin() &&
+              npos >= nmax()) { // just draw within cs area (y!)
+            qp->drawLine(offset - 8, npos, offset, npos);
+            // notch labels
+            QString s = QString::number(major_val[i]);
+            qp->drawText(offset - fm.horizontalAdvance(s) - 11,
+                         npos + fm.height() / 3, s);
+          }
         }
         // minor notches (w/o notch labels)
         std::vector<double> minor_val = get_minor_pos(major_val);
         for (int i = 0; i < minor_val.size(); ++i) {
           int npos = to_w(minor_val[i], scaled);
-          qp->drawLine(offset - 5, npos, offset, npos);
+          if (npos <= nmin() &&
+              npos >= nmax()) { // just draw within cs area (y!)
+            qp->drawLine(offset - 5, npos, offset, npos);
+          }
         }
 
         // y axis label
@@ -211,14 +226,17 @@ std::vector<double> Axis::get_major_pos() const {
   std::vector<double> notches;
 
   // combine sweep left and sweep right starting from anchor point
+  // sweep range is between ad.min - ad.major_delta and ad.max + ad.major_delta
+  // to have at least the two major notches needed to draw the minor notches
 
   switch (ad.scaling) {
 
     case Scaling::linear:
       {
         double value = ad.major_anchor;
-        while (value >= ad.min) {                   // sweep left
-          if (value >= ad.min && value <= ad.max) { // in interval now
+        while (value >= ad.min - ad.major_delta) { // sweep left
+          if (value >= ad.min - ad.major_delta &&
+              value <= ad.max + ad.major_delta) { // in interval now
             notches.push_back(value);
           }
           value -= ad.major_delta;
@@ -227,8 +245,9 @@ std::vector<double> Axis::get_major_pos() const {
         std::reverse(notches.begin(), notches.end());
 
         value = ad.major_anchor;
-        while (value <= ad.max) { // sweep right
-          if (value >= ad.min && value <= ad.max &&
+        while (value <= ad.max + ad.major_delta) { // sweep right
+          if (value >= ad.min - ad.major_delta &&
+              value <= ad.max + ad.major_delta &&
               value != ad.major_anchor) { // in interval now (w/o anchor point)
             notches.push_back(value);
           }
@@ -240,9 +259,10 @@ std::vector<double> Axis::get_major_pos() const {
                                // and minor_intervals and create standardized
                                // log10 axis
       {
-        double value = 1.0;                         // standard anchor value
-        while (value >= ad.min) {                   // sweep left
-          if (value >= ad.min && value <= ad.max) { // in interval now
+        double value = 1.0;                        // standard anchor value
+        while (value >= ad.min - ad.major_delta) { // sweep left
+          if (value >= ad.min - ad.major_delta &&
+              value <= ad.max + ad.major_delta) { // in interval now
             notches.push_back(value);
           }
           value -= 1.0;
@@ -250,9 +270,10 @@ std::vector<double> Axis::get_major_pos() const {
         // reverse vector
         std::reverse(notches.begin(), notches.end());
 
-        value = 1.0;              // standard anchor value
-        while (value <= ad.max) { // sweep right
-          if (value >= ad.min && value <= ad.max &&
+        value = 1.0;                               // standard anchor value
+        while (value <= ad.max + ad.major_delta) { // sweep right
+          if (value >= ad.min - ad.major_delta &&
+              value <= ad.max + ad.major_delta &&
               value != 1.0) { // in interval now (w/o anchor point)
             notches.push_back(value);
           }
@@ -262,7 +283,12 @@ std::vector<double> Axis::get_major_pos() const {
       }
   }
 
-  // fmt::print("major notches = {}\n", notches);
+  // if (ad.direction == Direction::x) {
+  //   fmt::print("x major notches = {}\n", notches);
+  // }
+  // if (ad.direction == Direction::y) {
+  //   fmt::print("y major notches = {}\n", notches);
+  // }
   return notches;
 } // get_major_pos()
 
@@ -273,28 +299,15 @@ Axis::get_minor_pos(const std::vector<double>& major_pos) const {
 
   std::vector<double> notches;
 
-  switch (ad.scaling) {
+  // the major_pos vector must at least contain two major notches so that we can
+  // return something meaningful (otherwise the notches vector remains empty)
+  if (major_pos.size() >= 2) {
 
-    case Scaling::linear:
-      {
+    switch (ad.scaling) {
 
-        { // anything before the leftmost major notch?
-          double delta = (major_pos[1] - major_pos[0]) / ad.minor_intervals;
-          if (ad.min <= major_pos[0] - delta) {
-            double value_init = major_pos[0] - delta;
-            double value = value_init;
-            while (value >= ad.min) {                       // sweep left
-              if (value >= ad.min && value <= value_init) { // in interval now
-                notches.push_back(value);
-              }
-              value -= delta;
-            }
-            // reverse vector
-            std::reverse(notches.begin(), notches.end());
-          }
-        }
-
-        { // go through all major notches
+      case Scaling::linear:
+        {
+          // go through all major notches (there are at least two)
           int last = major_pos.size() - 1;
           for (int i = 0; i < last; ++i) {
             double delta =
@@ -304,43 +317,11 @@ Axis::get_minor_pos(const std::vector<double>& major_pos) const {
               notches.push_back(j * delta + major_pos[i]);
             }
           }
+          break;
         }
-
-        { // anything after the rightmost major notch?
-          int last = major_pos.size() - 1;
-          double delta =
-              (major_pos[last] - major_pos[last - 1]) / ad.minor_intervals;
-          if (ad.max >= major_pos[last] + delta) {
-            double value_init = major_pos[last] + delta;
-            double value = value_init;
-            while (value <= ad.max) {                       // sweep right
-              if (value <= ad.max && value >= value_init) { // in interval now
-                notches.push_back(value);
-              }
-              value += delta;
-            }
-          }
-        }
-
-        break;
-      }
-    case Scaling::logarithmic:
-      {
-
-        { // anything before the leftmost major notch?
-          double value = major_pos[0];
-          double delta = std::pow(10, std::floor(value) - 1);
-          for (int j = 0; j < 8; ++j) {
-            value = std::log10(std::pow(10, value) - delta);
-            if (value > ad.min) {
-              notches.push_back(value);
-            }
-          }
-          // reverse vector
-          std::reverse(notches.begin(), notches.end());
-        }
-
-        { // go through all major notches
+      case Scaling::logarithmic:
+        {
+          // go through all major notches (there are at least two)
           int last = major_pos.size() - 1;
           for (int i = 0; i < last; ++i) {
             double value = major_pos[i];
@@ -350,27 +331,19 @@ Axis::get_minor_pos(const std::vector<double>& major_pos) const {
               notches.push_back(value);
             }
           }
+          break;
         }
-
-        { // anything after the rightmost major notch?
-          int last = major_pos.size() - 1;
-          double value = major_pos[last];
-          double delta = std::pow(10, std::floor(value));
-          for (int j = 0; j < 8; ++j) {
-            value = std::log10(std::pow(10, value) + delta);
-            if (value < ad.max) {
-              notches.push_back(value);
-            }
-          }
-        }
-
-        break;
-      }
+    }
   }
 
-  // fmt::print("minor notches = {}\n", notches);
-  //   if (ad.direction == Direction::y)
-  //     fmt::print("minor notches = {:.3f}\n", fmt::join(notches, ", "));
+  // if (ad.direction == Direction::x) {
+  //   fmt::print("x minor notches = {}\n", notches);
+  //   fmt::print("x minor notches = {:.3f}\n", fmt::join(notches, ", "));
+  // }
+  // if (ad.direction == Direction::y) {
+  //   fmt::print("y minor notches = {}\n", notches);
+  //   // fmt::print("y minor notches = {:.3f}\n", fmt::join(notches, ", "));
+  // }
   return notches;
 } // get_minor_pos()
 
@@ -389,7 +362,9 @@ void Coordsys::draw(QPainter* qp) {
     std::vector<double> major_val = x.get_major_pos();
     for (int i = 0; i < major_val.size(); ++i) {
       int npos = x.to_w(major_val[i], scaled);
-      qp->drawLine(npos, y.nmin(), npos, y.nmax());
+      if (npos >= x.nmin() && npos <= x.nmax()) { // just draw within cs area
+        qp->drawLine(npos, y.nmin(), npos, y.nmax());
+      }
     }
   }
 
@@ -397,7 +372,10 @@ void Coordsys::draw(QPainter* qp) {
     std::vector<double> major_val = y.get_major_pos();
     for (int i = 0; i < major_val.size(); ++i) {
       int npos = y.to_w(major_val[i], scaled);
-      qp->drawLine(x.nmin(), npos, x.nmax(), npos);
+      if (npos <= y.nmin() &&
+          npos >= y.nmax()) { // just draw within cs area (y!)
+        qp->drawLine(x.nmin(), npos, x.nmax(), npos);
+      }
     }
   }
 
@@ -420,6 +398,7 @@ void Coordsys::draw(QPainter* qp) {
                y.nmax() - fmbx.height() / 2, title);
   qp->restore();
 
+  // clipping area is active area of coordsys
   QRegion clip_area(
       QRect(x.nmin(), y.nmax(), x.nmax() - x.nmin(), y.nmin() - y.nmax()));
   qp->setClipRegion(clip_area);
@@ -474,6 +453,29 @@ void Coordsys::adjust_to_pan(double dx, double dy) {
     // set new axis limits and create new axis
     ady.min -= dy;
     ady.max -= dy;
+    y = Axis(wdy, ady);
+  }
+}
+
+void Coordsys::adjust_to_zoom(double new_xmin, double new_xmax, double new_ymin,
+                              double new_ymax) {
+
+  // get data of existing axis
+  widget_axis_data wdx = x.get_widget_axis_data();
+  axis_data adx = x.get_axis_data();
+  widget_axis_data wdy = y.get_widget_axis_data();
+  axis_data ady = y.get_axis_data();
+
+  // set new axis limits and create new axis, if required
+  if (new_xmin != adx.min || new_xmax != adx.max) {
+    adx.min = new_xmin;
+    adx.max = new_xmax;
+    x = Axis(wdx, adx);
+  }
+
+  if (new_ymin != ady.min || new_ymax != ady.max) {
+    ady.min = new_ymin;
+    ady.max = new_ymax;
     y = Axis(wdy, ady);
   }
 }

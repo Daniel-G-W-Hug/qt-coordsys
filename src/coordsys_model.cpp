@@ -123,6 +123,11 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
   return new_id.id;
 }
 
+void Coordsys_model::set_label(const std::string& new_label) {
+
+  m_label = new_label;
+}
+
 void Coordsys_model::clear() {
   unique_id = 0;
 
@@ -133,4 +138,6 @@ void Coordsys_model::clear() {
   line.clear();
   line_mark.clear();
   line_id.clear();
+
+  m_label.clear();
 }

@@ -90,10 +90,12 @@ public:
   Coordsys(Axis x, Axis y, coordsys_data cd);
   void draw(QPainter* qp);
 
-  // coordsys_data get_coordsys_data() const { return cd; }
+  coordsys_data get_coordsys_data() const { return cd; }
 
   void adjust_to_resized_widget(int new_w_width, int new_w_height);
   void adjust_to_pan(double dx, double dy);
+  void adjust_to_zoom(double new_xmin, double new_xmax, double new_ymin,
+                      double new_ymax);
 
   Axis x;
   Axis y;

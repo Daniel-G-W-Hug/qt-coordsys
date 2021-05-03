@@ -1,10 +1,12 @@
 #include "w_coordsys.hpp"
+#include <QCursor>
 #include <QPainter>
 #include <QPalette>
 #include <QPen>
 #include <QString>
 
-#include <cmath> // for axis scaling (and mathematical functions)
+#include <algorithm> // for std::min and std::max
+#include <cmath>     // for axis scaling (and mathematical functions)
 
 w_Coordsys::w_Coordsys(Coordsys* cs, Coordsys_model* cm, QWidget* parent)
     : QWidget(parent), cs(cs), cm(cm) {
@@ -16,6 +18,12 @@ w_Coordsys::w_Coordsys(Coordsys* cs, Coordsys_model* cm, QWidget* parent)
   setMinimumSize(cs->x.widget_size(), cs->y.widget_size());
   setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   updateGeometry();
+
+  // receive Mouse Move Events even when no button is pressed (default is false)
+  // required to inform the status bar about the current mouse position
+  setMouseTracking(true);
+  // Accept KeyPress and KeyRelease Events
+  setFocusPolicy(Qt::StrongFocus);
 }
 
 w_Coordsys::w_Coordsys(Coordsys* cs, const std::vector<Coordsys_model*> vm,
@@ -32,6 +40,8 @@ w_Coordsys::w_Coordsys(Coordsys* cs, const std::vector<Coordsys_model*> vm,
   // receive Mouse Move Events even when no button is pressed (default is false)
   // required to inform the status bar about the current mouse position
   setMouseTracking(true);
+  // Accept KeyPress and KeyRelease Events
+  setFocusPolicy(Qt::StrongFocus);
 }
 
 void w_Coordsys::resizeEvent(QResizeEvent* event) {
@@ -53,31 +63,151 @@ void w_Coordsys::draw(QPainter* qp) {
 
   cs->draw(qp);
   cm->draw(qp, cs);
+
+  // fmt::print("w_Coorsys::draw\n");
+
+  if (m_leftButton) {
+
+    qp->save();
+    qp->setPen(QPen(Qt::blue, 2, Qt::SolidLine));
+    qp->setBrush(QColor(240, 230, 50, 128)); // transparent yellow
+
+    switch (m_mode) {
+      case pz_mode::x_and_y:
+        // draw zoom rectangle
+
+        qp->drawRect(m_nx_leftPress, m_ny_leftPress, m_nx_hot - m_nx_leftPress,
+                     m_ny_hot - m_ny_leftPress);
+
+        break;
+      case pz_mode::x_only:
+        qp->drawRect(m_nx_leftPress, cs->y.nmax(), m_nx_hot - m_nx_leftPress,
+                     cs->y.nmin() - cs->y.nmax());
+        break;
+      case pz_mode::y_only:
+        qp->drawRect(cs->x.nmin(), m_ny_leftPress, cs->x.nmax() - cs->x.nmin(),
+                     m_ny_hot - m_ny_leftPress);
+        break;
+    }
+    qp->restore();
+  }
+}
+
+void w_Coordsys::keyPressEvent(QKeyEvent* event) {
+
+  // ignore key repetition, just change the mode if required
+  if (event->key() == Qt::Key_X && m_mode != pz_mode::x_only) {
+    m_mode = pz_mode::x_only;
+    // fmt::print("X pressed\n");
+    emit modeChanged(m_mode);
+  }
+  if (event->key() == Qt::Key_Y && m_mode != pz_mode::y_only) {
+    m_mode = pz_mode::y_only;
+    // fmt::print("Y pressed\n");
+    emit modeChanged(m_mode);
+  }
+  if (event->key() == Qt::Key_Z && (event->modifiers() & Qt::ControlModifier)) {
+    // call undo function to reinstate last coordsys
+    pop_from_history();
+  }
+}
+
+void w_Coordsys::keyReleaseEvent(QKeyEvent* event) {
+
+  if (event->key() == Qt::Key_X) {
+    m_mode = pz_mode::x_and_y;
+    // fmt::print("X released\n");
+    emit modeChanged(m_mode);
+  }
+  if (event->key() == Qt::Key_Y) {
+    m_mode = pz_mode::x_and_y;
+    // fmt::print("Y released\n");
+    emit modeChanged(m_mode);
+  }
 }
 
 void w_Coordsys::mousePressEvent(QMouseEvent* event) {
 
   // accept mouse presses only in hot area
-  if (event->button() == Qt::LeftButton && m_hot) {
-    m_leftBotton = true;
-  }
-  if (event->button() == Qt::RightButton && m_hot) {
-    m_rightBotton = true;
+  if (m_hot) {
+    if (event->button() == Qt::LeftButton) {
+      // zoom
+      m_leftButton = true;
+      m_nx_leftPress = event->pos().x();
+      m_ny_leftPress = event->pos().y();
+    }
+
+    if (event->button() == Qt::RightButton) {
+      // pan
+      m_rightButton = true;
+      setCursor(QCursor(Qt::OpenHandCursor));
+
+      // store undo info (before pan starts, don't store intermediate steps)
+      // call update to statusbar only on keyRelease, to not confuse the user
+      push_to_history();
+    }
   }
 }
 
 void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
 
-  if (event->button() == Qt::LeftButton) {
-    m_leftBotton = false;
+  // end of zoom event triggered with left mouse button
+  if (event->button() == Qt::LeftButton && m_leftButton) {
+    m_leftButton = false;
+
+    double new_xmin =
+        std::min(cs->x.to_a(m_nx_leftPress), cs->x.to_a(m_nx_hot));
+    double new_xmax =
+        std::max(cs->x.to_a(m_nx_leftPress), cs->x.to_a(m_nx_hot));
+    double new_ymin =
+        std::min(cs->y.to_a(m_ny_leftPress), cs->y.to_a(m_ny_hot));
+    double new_ymax =
+        std::max(cs->y.to_a(m_ny_leftPress), cs->y.to_a(m_ny_hot));
+
+    // fmt::print("xmin={}, xmax={}, ymin={}, ymax={}\n", new_xmin, new_xmax,
+    //            new_ymin, new_ymax);
+
+    // only adjust if remaining new x- and y-axis are larger than zero
+    // otherwise ignore zoom request
+    if (new_xmin != new_xmax && new_ymin != new_ymax) {
+
+      // store undo info (only if zoom actually is performed)
+      // and update statusbar emediately
+      push_to_history();
+      emit undoChanged(cs_history.size());
+
+      // adjust and update
+      switch (m_mode) {
+        case pz_mode::x_and_y:
+          cs->adjust_to_zoom(new_xmin, new_xmax, new_ymin, new_ymax);
+          break;
+        case pz_mode::x_only:
+          cs->adjust_to_zoom(new_xmin, new_xmax, cs->y.min(), cs->y.max());
+          break;
+        case pz_mode::y_only:
+          cs->adjust_to_zoom(cs->x.min(), cs->x.max(), new_ymin, new_ymax);
+          break;
+      }
+      update();
+    }
   }
-  if (event->button() == Qt::RightButton) {
-    m_rightBotton = false;
+
+  // end of pan event triggered with right mouse button
+  if (event->button() == Qt::RightButton && m_rightButton) {
+    m_rightButton = false;
+    if (m_hot) {
+      setCursor(QCursor(Qt::CrossCursor));
+    } else {
+      setCursor(QCursor());
+    }
+    // update statusbar (cs_history.size() changed on keyPressEvent)
+    emit undoChanged(cs_history.size());
   }
 }
 
 void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
 
+  // current mouse position in widget
   int nx = event->pos().x();
   int ny = event->pos().y();
 
@@ -96,13 +226,57 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
     }
     m_hot = hot; // store whether mouse is still in hot area
 
+    // send current mouse position to status bar
     emit mouseMoved(hot, x_pos, y_pos);
 
-    if (m_rightBotton && m_hot) {
+    // current mouse position in hot area (needed for zoom rectangle)
+    if (nx < cs->x.nmin()) {
+      m_nx_hot = cs->x.nmin();
+    } else if (nx > cs->x.nmax()) {
+      m_nx_hot = cs->x.nmax();
+    } else {
+      m_nx_hot = nx;
+    }
+
+    // different coordinate growth direction
+    if (ny > cs->y.nmin()) {
+      m_ny_hot = cs->y.nmin();
+    } else if (ny < cs->y.nmax()) {
+      m_ny_hot = cs->y.nmax();
+    } else {
+      m_ny_hot = ny;
+    }
+
+    // switch to crosshair cursor in hot area if right button is not pressed
+    if (m_hot && cursor() != Qt::CrossCursor && m_rightButton == false) {
+      setCursor(QCursor(Qt::CrossCursor));
+    }
+    // switch to crosshair cursor in hot area if right button is pressed
+    if (m_hot && cursor() != Qt::OpenHandCursor && m_rightButton == true) {
+      setCursor(QCursor(Qt::OpenHandCursor));
+    }
+
+    // switch back to default cursor outside of hot area
+    if (!m_hot) {
+      setCursor(QCursor());
+    }
+
+    // pan (only in hot area)
+    if (m_rightButton && m_hot) {
       double dx = x_pos - cs->x.to_a(m_nx);
       double dy = y_pos - cs->y.to_a(m_ny);
       // fmt::print("dx = {}, dy = {}\n", dx, dy);
-      cs->adjust_to_pan(dx, dy);
+      switch (m_mode) {
+        case pz_mode::x_and_y:
+          cs->adjust_to_pan(dx, dy);
+          break;
+        case pz_mode::x_only:
+          cs->adjust_to_pan(dx, 0.0);
+          break;
+        case pz_mode::y_only:
+          cs->adjust_to_pan(0.0, dy);
+          break;
+      }
       update();
     }
 
@@ -110,15 +284,44 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
     m_nx = nx;
     m_ny = ny;
 
+    // zoom (initiate update for drawing the zoom frame)
+    // allow update outside of hot area as well to include boundaries of hot
+    // area easily
+    if (m_leftButton) {
+      update();
+    }
+
     // fmt::print("m_nx = {}, m_ny = {}\n", m_nx, m_ny);
     // fmt::print("nx = {}, ny = {}\n", nx, ny);
     // fmt::print("delta_nx = {}, delta_ny = {}\n", delta_nx, delta_ny);
 
-    // fmt::print("hot = {}, left = {}, right = {}\n", m_hot, m_leftBotton,
-    //            m_rightBotton);
+    // fmt::print("hot = {}, left = {}, right = {}\n", m_hot, m_leftButton,
+    //            m_rightButton);
 
     // fmt::print("nx = {}, ny = {}, x_pos = {}, y_pos = {}\n", nx, ny, x_pos,
     //            y_pos);
+  }
+}
+
+void w_Coordsys::push_to_history() {
+
+  // push a copy of the current cs into cs_history and update statusbar
+  // (for undo)
+  cs_history.emplace_back(Coordsys(cs->x, cs->y, cs->get_coordsys_data()));
+}
+
+void w_Coordsys::pop_from_history() {
+
+  // undo function to restore older version of cs
+  if (cs_history.size() > 0) {
+    // fmt::print("got undo signal: cs_history.size()={}\n",
+    // cs_history.size());
+    *cs = cs_history[cs_history.size() - 1];
+    cs_history.pop_back();
+    // just in case the widet was resized => adjust to current size
+    cs->adjust_to_resized_widget(width(), height());
+    emit undoChanged(cs_history.size());
+    update();
   }
 }
 
@@ -127,6 +330,7 @@ void w_Coordsys::switch_to_model(int idx) {
   if (idx >= 0 && idx < vm.size()) {
     // fmt::print("got signal {}\n", idx);
     cm = vm[idx];
+    emit labelChanged(cm->label());
     update();
   }
 }

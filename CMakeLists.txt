@@ -62,7 +62,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 # fmt library
 #
 find_package(fmt)
-target_link_libraries(${PROJECT_NAME} fmt::fmt)
+#target_link_libraries(${PROJECT_NAME} fmt::fmt)
 
 #
 # Use the Widgets module from Qt 6.
@@ -70,6 +70,6 @@ target_link_libraries(${PROJECT_NAME} fmt::fmt)
 # Find the QtWidgets library
 find_package(
   Qt6
-  COMPONENTS Widgets
+  COMPONENTS Widgets Gui
   REQUIRED)
-target_link_libraries(${PROJECT_NAME} Qt6::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt Qt6::Widgets Qt6::Gui)
