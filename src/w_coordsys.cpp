@@ -4,6 +4,7 @@
 #include <QPalette>
 #include <QPen>
 #include <QString>
+#include <QWheelEvent>
 
 #include <algorithm> // for std::min and std::max
 #include <cmath>     // for axis scaling (and mathematical functions)
@@ -99,12 +100,12 @@ void w_Coordsys::keyPressEvent(QKeyEvent* event) {
   if (event->key() == Qt::Key_X && m_mode != pz_mode::x_only) {
     m_mode = pz_mode::x_only;
     // fmt::print("X pressed\n");
-    emit modeChanged(m_mode);
+    emit modeChanged(m_action, m_mode);
   }
   if (event->key() == Qt::Key_Y && m_mode != pz_mode::y_only) {
     m_mode = pz_mode::y_only;
     // fmt::print("Y pressed\n");
-    emit modeChanged(m_mode);
+    emit modeChanged(m_action, m_mode);
   }
   if (event->key() == Qt::Key_Z && (event->modifiers() & Qt::ControlModifier)) {
     // call undo function to reinstate last coordsys
@@ -117,12 +118,12 @@ void w_Coordsys::keyReleaseEvent(QKeyEvent* event) {
   if (event->key() == Qt::Key_X) {
     m_mode = pz_mode::x_and_y;
     // fmt::print("X released\n");
-    emit modeChanged(m_mode);
+    emit modeChanged(m_action, m_mode);
   }
   if (event->key() == Qt::Key_Y) {
     m_mode = pz_mode::x_and_y;
     // fmt::print("Y released\n");
-    emit modeChanged(m_mode);
+    emit modeChanged(m_action, m_mode);
   }
 }
 
@@ -133,27 +134,33 @@ void w_Coordsys::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
       // zoom
       m_leftButton = true;
+      m_action = pz_action::zoom;
       m_nx_leftPress = event->pos().x();
       m_ny_leftPress = event->pos().y();
+      emit modeChanged(m_action, m_mode);
     }
 
     if (event->button() == Qt::RightButton) {
       // pan
       m_rightButton = true;
+      m_action = pz_action::pan;
       setCursor(QCursor(Qt::OpenHandCursor));
 
       // store undo info (before pan starts, don't store intermediate steps)
       // call update to statusbar only on keyRelease, to not confuse the user
       push_to_history();
+      emit modeChanged(m_action, m_mode);
     }
   }
 }
 
 void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
 
-  // end of zoom event triggered with left mouse button
+  // end of zoom event triggered by release of left mouse button
   if (event->button() == Qt::LeftButton && m_leftButton) {
     m_leftButton = false;
+    m_action = pz_action::none;
+    emit modeChanged(m_action, m_mode);
 
     double new_xmin =
         std::min(cs->x.to_a(m_nx_leftPress), cs->x.to_a(m_nx_hot));
@@ -174,7 +181,7 @@ void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
       // store undo info (only if zoom actually is performed)
       // and update statusbar emediately
       push_to_history();
-      emit undoChanged(cs_history.size());
+      emit undoChanged(cs_history.size()); // update undo info in status bar
 
       // adjust and update
       switch (m_mode) {
@@ -192,9 +199,12 @@ void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
     }
   }
 
-  // end of pan event triggered with right mouse button
+  // end of pan event triggered by release of right mouse button
   if (event->button() == Qt::RightButton && m_rightButton) {
     m_rightButton = false;
+    m_action = pz_action::none;
+    emit modeChanged(m_action, m_mode);
+
     if (m_hot) {
       setCursor(QCursor(Qt::CrossCursor));
     } else {
@@ -251,7 +261,7 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
     if (m_hot && cursor() != Qt::CrossCursor && m_rightButton == false) {
       setCursor(QCursor(Qt::CrossCursor));
     }
-    // switch to crosshair cursor in hot area if right button is pressed
+    // switch to open hand cursor in hot area if right button is pressed
     if (m_hot && cursor() != Qt::OpenHandCursor && m_rightButton == true) {
       setCursor(QCursor(Qt::OpenHandCursor));
     }
@@ -303,10 +313,98 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
   }
 }
 
+void w_Coordsys::wheelEvent(QWheelEvent* event) {
+
+  // one tick corresponds to 1/8°
+  // scroll wheel ticks towards user are > 0; ticks away from user are negative
+  // on MacOS two finger movement without pressing is also registered as
+  // wheelEvent
+
+  if (event->isBeginEvent()) {
+    // store undo info only if wheel zoom actually is started
+    // and update statusbar immediately
+    m_action = pz_action::wheel_zoom;
+    emit modeChanged(m_action, m_mode);
+
+    // store min & max coordinates and major_delta as reference for scaling
+    m_ref_xmin = cs->x.min();
+    m_ref_xmax = cs->x.max();
+    m_ref_xdelta = cs->x.major_delta();
+
+    m_ref_ymin = cs->y.min();
+    m_ref_ymax = cs->y.max();
+    m_ref_ydelta = cs->y.major_delta();
+
+    push_to_history();
+    emit undoChanged(cs_history.size()); // update undo info in status bar
+  }
+
+  if (event->isEndEvent()) {
+    m_action = pz_action::none;
+    emit modeChanged(m_action, m_mode);
+  }
+
+  // just use the y-direction ticks as indication for requested zoom factor
+  int numTicks = event->angleDelta().y();
+
+  if (m_hot && (numTicks != 0)) {
+
+    // numTicks is used for scaling: positive values for zoom in, negative for
+    // zoom out center point for the scaling is the mouse cursor position
+    // m_nx_hot, m_ny_hot
+    // the distance between the x- and y-values at the current mouse position
+    // and the current min- and max-positions are scaled
+
+    // fmt::print(
+    //     "Received a wheelEvent at m_nx_hot = {}, m_ny_hot = {}, m_hot = {}, "
+    //     "numTicks = {}\n",
+    //     m_nx_hot, m_ny_hot, m_hot, numTicks);
+
+    double x = cs->x.to_a(m_nx_hot);
+    double y = cs->y.to_a(m_ny_hot);
+
+    double dx_min = x - cs->x.min();
+    double dx_max = cs->x.max() - x;
+
+    double dy_min = y - cs->y.min();
+    double dy_max = cs->y.max() - y;
+
+    double scale_fact = 1.0 - 0.01 * 0.25 * numTicks; // 4 numTicks = 1% scaling
+
+    double new_xmin = x - scale_fact * dx_min;
+    double new_xmax = x + scale_fact * dx_max;
+
+    double new_ymin = y - scale_fact * dy_min;
+    double new_ymax = y + scale_fact * dy_max;
+
+    // fmt::print("new_xmin={}, new_xmax={}, new_ymin={}, new_ymax={}\n\n",
+    //            new_xmin, new_xmax, new_ymin, new_ymax);
+
+    // adjust and update
+    switch (m_mode) {
+      case pz_mode::x_and_y:
+        cs->adjust_to_wheel_zoom(new_xmin, new_xmax, new_ymin, new_ymax,
+                                 m_ref_xmin, m_ref_xmax, m_ref_ymin, m_ref_ymax,
+                                 m_ref_xdelta, m_ref_ydelta);
+        break;
+      case pz_mode::x_only:
+        cs->adjust_to_wheel_zoom(new_xmin, new_xmax, cs->y.min(), cs->y.max(),
+                                 m_ref_xmin, m_ref_xmax, m_ref_ymin, m_ref_ymax,
+                                 m_ref_xdelta, m_ref_ydelta);
+        break;
+      case pz_mode::y_only:
+        cs->adjust_to_wheel_zoom(cs->x.min(), cs->x.max(), new_ymin, new_ymax,
+                                 m_ref_xmin, m_ref_xmax, m_ref_ymin, m_ref_ymax,
+                                 m_ref_xdelta, m_ref_ydelta);
+        break;
+    }
+    update();
+  }
+}
+
 void w_Coordsys::push_to_history() {
 
-  // push a copy of the current cs into cs_history and update statusbar
-  // (for undo)
+  // push a copy of the current cs into cs_history
   cs_history.emplace_back(Coordsys(cs->x, cs->y, cs->get_coordsys_data()));
 }
 
@@ -320,7 +418,7 @@ void w_Coordsys::pop_from_history() {
     cs_history.pop_back();
     // just in case the widet was resized => adjust to current size
     cs->adjust_to_resized_widget(width(), height());
-    emit undoChanged(cs_history.size());
+    emit undoChanged(cs_history.size()); // update undo info in status bar
     update();
   }
 }

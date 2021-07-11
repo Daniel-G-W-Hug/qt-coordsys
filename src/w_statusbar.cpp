@@ -56,13 +56,56 @@ void w_Statusbar::draw(QPainter* qp) {
   QString m;
   switch (m_mode) {
     case pz_mode::x_and_y:
-      m = QString("Pan/Zoom: X & Y");
+
+      switch (m_action) {
+        case pz_action::none:
+          m = QString("Mode: X & Y");
+          break;
+        case pz_action::pan:
+          m = QString("Pan: X & Y");
+          break;
+        case pz_action::zoom:
+          m = QString("Zoom: X & Y");
+          break;
+        case pz_action::wheel_zoom:
+          m = QString("Wheel Zoom: X & Y");
+          break;
+      }
       break;
+
     case pz_mode::x_only:
-      m = QString("Pan/Zoom: X");
+
+      switch (m_action) {
+        case pz_action::none:
+          m = QString("Mode: X");
+          break;
+        case pz_action::pan:
+          m = QString("Pan: X");
+          break;
+        case pz_action::zoom:
+          m = QString("Zoom: X");
+          break;
+        case pz_action::wheel_zoom:
+          m = QString("Wheel Zoom: X");
+          break;
+      }
       break;
+
     case pz_mode::y_only:
-      m = QString("Pan/Zoom: Y");
+      switch (m_action) {
+        case pz_action::none:
+          m = QString("Mode: Y");
+          break;
+        case pz_action::pan:
+          m = QString("Pan: Y");
+          break;
+        case pz_action::zoom:
+          m = QString("Zoom: Y");
+          break;
+        case pz_action::wheel_zoom:
+          m = QString("Wheel Zoom: Y");
+          break;
+      }
       break;
   }
   qp->drawText(border_dist + undo_len + 15, nypos, m);
@@ -107,11 +150,12 @@ void w_Statusbar::on_modelChanged(int step) {
   }
 }
 
-void w_Statusbar::on_modeChanged(pz_mode mode) {
+void w_Statusbar::on_modeChanged(pz_action action, pz_mode mode) {
 
-  if (m_mode != mode) {
+  if (m_action != action || m_mode != mode) {
     // update only if any value has changed
-    // fmt::print("received modeChanged event: {}\n", step);
+    // fmt::print("received modeChanged event.\n");
+    m_action = action;
     m_mode = mode;
     update();
   }

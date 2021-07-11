@@ -6,7 +6,7 @@
 #include <QWidget>
 
 #include <algorithm> // std::reverse
-#include <cmath>     // for axis scaling (and mathematical functions)
+#include <cmath> // for mathematical functions used for axis scaling (e.g. log10, pow, ceil)
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -463,19 +463,179 @@ void Coordsys::adjust_to_zoom(double new_xmin, double new_xmax, double new_ymin,
   // get data of existing axis
   widget_axis_data wdx = x.get_widget_axis_data();
   axis_data adx = x.get_axis_data();
-  widget_axis_data wdy = y.get_widget_axis_data();
-  axis_data ady = y.get_axis_data();
 
-  // set new axis limits and create new axis, if required
-  if (new_xmin != adx.min || new_xmax != adx.max) {
+  if (adx.min != new_xmin || adx.max != new_xmax) {
+    // if there is some change
+    // set new delta, as well as new min and new max
+    adx.major_delta =
+        get_new_delta(adx.min, adx.max, adx.major_delta, new_xmin, new_xmax);
     adx.min = new_xmin;
     adx.max = new_xmax;
+
+    // create new axis
     x = Axis(wdx, adx);
   }
 
-  if (new_ymin != ady.min || new_ymax != ady.max) {
+  widget_axis_data wdy = y.get_widget_axis_data();
+  axis_data ady = y.get_axis_data();
+
+  if (ady.min != new_ymin || ady.max != new_ymax) {
+    // if there is some change
+    // set new delta, as well as new min and new max
+    ady.major_delta =
+        get_new_delta(ady.min, ady.max, ady.major_delta, new_ymin, new_ymax);
     ady.min = new_ymin;
     ady.max = new_ymax;
+
+    // create new axis
     y = Axis(wdy, ady);
   }
+}
+
+double Coordsys::get_new_delta(double min, double max, double delta,
+                               double new_min, double new_max) {
+
+  // range r
+  double r = max - min;
+
+  // fmt::print("r = {}, dx = {}, n = {}, order of magn. = {}, delta_o = {}\n",
+  // r,
+  //            delta, int(r / delta), std::ceil(std::log10(r)),
+  //            std::pow(10, std::ceil(std::log10(r))) / 10);
+
+  double new_r = new_max - new_min;
+
+  // how often does delta fit in new range:
+  int new_n = new_r / delta;
+  double fact = r / new_r;
+
+  // fmt::print(
+  //     "new_r = {},  dx = {}, new_n = {}, r/new_r = {}, int(r/new_r) = {}\n",
+  //     new_r, delta, new_n, fact, int(r / new_r));
+
+  double new_delta{delta};
+  int factor{1};
+
+  // only change delta if number of intervals in range changes significantly
+  if ((new_n <= 2 || new_n >= 10) && (fact > 1.2)) {
+
+    // round to nearest of 1,2,4,5,8,10,20,40,50,80,100,200
+    if (fact > 1.2 && fact <= 3.) {
+      factor = 2;
+    } else if (fact > 3. && fact <= 4.5) {
+      factor = 4;
+    } else if (fact > 4.5 && fact <= 7.) {
+      factor = 5;
+    } else if (fact > 7. && fact <= 9.) {
+      factor = 8;
+    } else if (fact > 9. && fact <= 15.) {
+      factor = 10;
+    } else if (fact > 15. && fact <= 30.) {
+      factor = 20;
+    } else if (fact > 30. && fact <= 45.) {
+      factor = 40;
+    } else if (fact > 45. && fact <= 70.) {
+      factor = 50;
+    } else if (fact > 70. && fact <= 90.) {
+      factor = 80;
+    } else if (fact > 90. && fact <= 150.) {
+      factor = 100;
+    } else {
+      factor = 200;
+    }
+
+    // fmt::print("fact = {}, factor = {}, ", fact, factor);
+
+    new_delta /= factor;
+  }
+
+  // fmt::print("new_delta = {}\n\n", new_delta);
+
+  return new_delta;
+}
+
+void Coordsys::adjust_to_wheel_zoom(double new_xmin, double new_xmax,
+                                    double new_ymin, double new_ymax,
+                                    double ref_xmin, double ref_xmax,
+                                    double ref_ymin, double ref_ymax,
+                                    double ref_xdelta, double ref_ydelta) {
+
+  // get data of existing axis
+  widget_axis_data wdx = x.get_widget_axis_data();
+  axis_data adx = x.get_axis_data();
+
+  if (adx.min != new_xmin || adx.max != new_xmax) {
+    // if there is some change
+    // set new delta, as well as new min and new max
+    adx.major_delta =
+        get_new_delta_wheel_zoom(adx.min, adx.max, adx.major_delta, new_xmin,
+                                 new_xmax, ref_xmin, ref_xmax, ref_xdelta);
+    adx.min = new_xmin;
+    adx.max = new_xmax;
+
+    // create new axis
+    x = Axis(wdx, adx);
+  }
+
+  widget_axis_data wdy = y.get_widget_axis_data();
+  axis_data ady = y.get_axis_data();
+
+  if (ady.min != new_ymin || ady.max != new_ymax) {
+    // if there is some change
+    // set new delta, as well as new min and new max
+    ady.major_delta =
+        get_new_delta_wheel_zoom(ady.min, ady.max, ady.major_delta, new_ymin,
+                                 new_ymax, ref_ymin, ref_ymax, ref_ydelta);
+    ady.min = new_ymin;
+    ady.max = new_ymax;
+
+    // create new axis
+    y = Axis(wdy, ady);
+  }
+}
+
+double Coordsys::get_new_delta_wheel_zoom(double min, double max, double delta,
+                                          double new_min, double new_max,
+                                          double ref_min, double ref_max,
+                                          double ref_delta) {
+
+  // ref range ref_r
+  double ref_r = ref_max - ref_min;
+
+  // new range
+  double new_r = new_max - new_min;
+
+  double fact = new_r / ref_r * ref_delta / delta;
+
+  // double r = max - min;
+  // int n = r / delta;
+  // int ref_n = ref_r / ref_delta;
+  // int new_n = new_r / delta;
+  //
+  // fmt::print("ref_delta = {:.3}, , ref_r = {:.3}, ref_n = {:2}, "
+  //            "delta = {:.3}, r = {:.3}, n = {:2}, "
+  //            "new_r = {:.3}, new_n = {:2}, "
+  //            "fact = {:.4}\n",
+  //            ref_delta, ref_r, ref_n, delta, r, n, new_r, new_n, fact);
+
+  double new_delta{delta};
+  double factor{1.0};
+
+  // only change delta if number of intervals in range changes significantly
+  if (fact <= 0.5) {
+
+    factor = 0.5;
+
+  } else if (fact >= 2.0) {
+
+    factor = 2.0;
+  }
+
+  // fmt::print("fact = {}, factor = {}, ", fact, factor);
+
+  new_delta *= factor;
+
+  // fmt::print("new_delta = {}\n\n", new_delta);
+
+  return new_delta;
 }

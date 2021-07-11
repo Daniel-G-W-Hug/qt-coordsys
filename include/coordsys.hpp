@@ -59,6 +59,7 @@ public:
 
   double min() const { return ad.min; }
   double max() const { return ad.max; }
+  double major_delta() const { return ad.major_delta; }
   int nmin() const { return to_w(ad.min, false); }
   int nmax() const { return to_w(ad.max, false); }
   int widget_size() const { return wd.w_size; }
@@ -96,9 +97,21 @@ public:
   void adjust_to_pan(double dx, double dy);
   void adjust_to_zoom(double new_xmin, double new_xmax, double new_ymin,
                       double new_ymax);
+  void adjust_to_wheel_zoom(double new_xmin, double new_xmax, double new_ymin,
+                            double new_ymax, double ref_xmin, double ref_xmax,
+                            double ref_ymin, double ref_ymax, double ref_xdelta,
+                            double ref_ydelta);
 
   Axis x;
   Axis y;
+
+protected:
+  double get_new_delta(double min, double max, double delta, double new_min,
+                       double new_max);
+  double get_new_delta_wheel_zoom(double min, double max, double delta,
+                                  double new_min, double new_max,
+                                  double ref_min, double ref_max,
+                                  double ref_delta);
 
 private:
   coordsys_data cd;

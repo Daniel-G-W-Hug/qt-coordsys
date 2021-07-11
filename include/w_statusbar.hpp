@@ -25,7 +25,7 @@ private slots:
   // x, y
   void on_mouseMoved(bool hot, double x, double y);
   void on_modelChanged(int step);
-  void on_modeChanged(pz_mode mode);
+  void on_modeChanged(pz_action action, pz_mode mode);
   void on_undoChanged(int undo_steps);
   void on_labelChanged(std::string label);
 
@@ -45,7 +45,11 @@ private:
   // model label
   std::string m_label{};
 
-  // pan and zoom mode (all: no restriction)
+  // pan and zoom action
+  pz_action m_action{pz_action::none};
+
+  // pan and zoom mode restrictions
+  // (x_and_y: no restriction)
   pz_mode m_mode{pz_mode::x_and_y};
 
   // number of undo steps available

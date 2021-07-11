@@ -33,8 +33,8 @@ w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent)
   // link coordsys to statusbar
   connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
           SLOT(on_mouseMoved(bool, double, double)));
-  connect(wcs, SIGNAL(modeChanged(pz_mode)), wsb,
-          SLOT(on_modeChanged(pz_mode)));
+  connect(wcs, SIGNAL(modeChanged(pz_action, pz_mode)), wsb,
+          SLOT(on_modeChanged(pz_action, pz_mode)));
   connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
   connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
           SLOT(on_labelChanged(std::string)));
@@ -81,8 +81,8 @@ w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
   // link coordsys to statusbar
   connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
           SLOT(on_mouseMoved(bool, double, double)));
-  connect(wcs, SIGNAL(modeChanged(pz_mode)), wsb,
-          SLOT(on_modeChanged(pz_mode)));
+  connect(wcs, SIGNAL(modeChanged(pz_action, pz_mode)), wsb,
+          SLOT(on_modeChanged(pz_action, pz_mode)));
   connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
   connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
           SLOT(on_labelChanged(std::string)));
