@@ -7,8 +7,8 @@
 
 Coordsys make_cs() {
   axis_data ax, ay;
-  ax.min = -4.;
-  ax.max = 4.;
+  ax.min = 0.;
+  ax.max = 5.;
   ax.direction = Direction::x;
   // ax.scaling = Scaling::logarithmic;
   ax.label = "x label";
@@ -23,8 +23,11 @@ Coordsys make_cs() {
   ay.minor_intervals = 4;
 
   ay.min = -2;
-  ay.max = 2;
+  ay.max = 3;
   ay.scaling = Scaling::logarithmic;
+  // ay.min = 0;
+  // ay.max = 1001;
+  // ay.major_delta = 100.0;
 
   ay.direction = Direction::y;
   ay.label = "y label";
@@ -77,6 +80,20 @@ Coordsys_model make_model() {
   l1.push_back(p0);
   l1.push_back(p3);
   cm.add_l(l1);
+
+  line2d l2;
+  double x = 0.;
+  double dx = 0.1;
+  double x_eps = 0.001 * dx;
+
+  while (x <= 3.0 + x_eps) {
+
+    l2.push_back(pt2d(x, pow(10, x)));
+    x += dx;
+  }
+  line2d_mark l2m;
+  l2m.mark_pts = true;
+  cm.add_l(l2, l2m);
 
   cm.set_label("init label");
 
@@ -144,6 +161,8 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     Coordsys cs = make_cs();
+
+    // fmt::print("Size of cs = {}\n", sizeof(cs));
 
     // single model case
     Coordsys_model cm = make_model();

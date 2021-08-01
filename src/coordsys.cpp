@@ -255,10 +255,10 @@ std::vector<double> Axis::get_major_pos() const {
                                // and minor_intervals and create standardized
                                // log10 axis
       {
-        double value = 1.0;                        // standard anchor value
-        while (value >= ad.min - ad.major_delta) { // sweep left
-          if (value >= ad.min - ad.major_delta &&
-              value <= ad.max + ad.major_delta) { // in interval now
+        double value = 1.0;             // standard anchor value
+        while (value >= ad.min - 1.0) { // sweep left
+          if (value >= ad.min - 1.0 &&
+              value <= ad.max + 1.0) { // in interval now
             notches.push_back(value);
           }
           value -= 1.0;
@@ -266,10 +266,9 @@ std::vector<double> Axis::get_major_pos() const {
         // reverse vector
         std::reverse(notches.begin(), notches.end());
 
-        value = 1.0;                               // standard anchor value
-        while (value <= ad.max + ad.major_delta) { // sweep right
-          if (value >= ad.min - ad.major_delta &&
-              value <= ad.max + ad.major_delta &&
+        value = 1.0;                    // standard anchor value
+        while (value <= ad.max + 1.0) { // sweep right
+          if (value >= ad.min - 1.0 && value <= ad.max + 1.0 &&
               value != 1.0) { // in interval now (w/o anchor point)
             notches.push_back(value);
           }

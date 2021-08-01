@@ -37,6 +37,8 @@ struct axis_data {
   double major_delta{1.0}; // distance between two major notches
                            // each enclosed with major notches (0: none)
                            // major notches will be numbered
+                           //
+                           // ignored for log scale
 
   int minor_intervals{2}; // number of intervals within each major interval
                           // minor notches will not be numbered (0: none)
