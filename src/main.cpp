@@ -16,15 +16,15 @@ Coordsys make_cs() {
   ax.major_delta = 1.0;
   ax.minor_intervals = 4;
 
-  ay.min = -3.1;
-  ay.max = 3.1;
+  // ay.min = -3.1;
+  // ay.max = 3.1;
   ay.major_anchor = 0.0;
   ay.major_delta = 1.0;
   ay.minor_intervals = 4;
 
-  // ay.min = -2;
-  // ay.max = 2;
-  // ay.scaling = Scaling::logarithmic;
+  ay.min = -2;
+  ay.max = 2;
+  ay.scaling = Scaling::logarithmic;
 
   ay.direction = Direction::y;
   ay.label = "y label";
@@ -146,18 +146,18 @@ int main(int argc, char* argv[]) {
     Coordsys cs = make_cs();
 
     // single model case
-    // Coordsys_model cm = make_model();
-    // w_Cs_view window(&cs, &cm);
+    Coordsys_model cm = make_model();
+    w_Cs_view window(&cs, &cm);
 
     // multi model case
-    std::vector<Coordsys_model> vmodels;
-    vmodels = make_vector_of_models();
+    // std::vector<Coordsys_model> vmodels;
+    // vmodels = make_vector_of_models();
 
-    std::vector<Coordsys_model*> vm;
-    for (int i = 0; i < vmodels.size(); ++i) {
-      vm.push_back(&vmodels[i]);
-    }
-    w_Cs_view window(&cs, vm);
+    // std::vector<Coordsys_model*> vm;
+    // for (int i = 0; i < vmodels.size(); ++i) {
+    //   vm.push_back(&vmodels[i]);
+    // }
+    // w_Cs_view window(&cs, vm);
 
     // window.resize(600, 600);
     window.setWindowTitle("Coordsys");

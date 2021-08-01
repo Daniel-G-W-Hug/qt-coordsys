@@ -162,14 +162,15 @@ void w_Coordsys::mouseReleaseEvent(QMouseEvent* event) {
     m_action = pz_action::none;
     emit modeChanged(m_action, m_mode);
 
+    // return scaled values as new min and max
     double new_xmin =
-        std::min(cs->x.to_a(m_nx_leftPress), cs->x.to_a(m_nx_hot));
+        std::min(cs->x.w_to_a(m_nx_leftPress), cs->x.w_to_a(m_nx_hot));
     double new_xmax =
-        std::max(cs->x.to_a(m_nx_leftPress), cs->x.to_a(m_nx_hot));
+        std::max(cs->x.w_to_a(m_nx_leftPress), cs->x.w_to_a(m_nx_hot));
     double new_ymin =
-        std::min(cs->y.to_a(m_ny_leftPress), cs->y.to_a(m_ny_hot));
+        std::min(cs->y.w_to_a(m_ny_leftPress), cs->y.w_to_a(m_ny_hot));
     double new_ymax =
-        std::max(cs->y.to_a(m_ny_leftPress), cs->y.to_a(m_ny_hot));
+        std::max(cs->y.w_to_a(m_ny_leftPress), cs->y.w_to_a(m_ny_hot));
 
     // fmt::print("xmin={}, xmax={}, ymin={}, ymax={}\n", new_xmin, new_xmax,
     //            new_ymin, new_ymax);
@@ -224,9 +225,9 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
   if (nx != m_nx || ny != m_ny) {
     // mouse moved to a new postion
 
-    // convert coordinates
-    double x_pos = cs->x.to_a(nx);
-    double y_pos = cs->y.to_a(ny);
+    // convert coordinates to scaled values
+    double x_pos = cs->x.w_to_a(nx);
+    double y_pos = cs->y.w_to_a(ny);
 
     // determine if mouse is in active cs area
     bool hot = false;
@@ -273,8 +274,8 @@ void w_Coordsys::mouseMoveEvent(QMouseEvent* event) {
 
     // pan (only in hot area)
     if (m_rightButton && m_hot) {
-      double dx = x_pos - cs->x.to_a(m_nx);
-      double dy = y_pos - cs->y.to_a(m_ny);
+      double dx = x_pos - cs->x.w_to_a(m_nx);
+      double dy = y_pos - cs->y.w_to_a(m_ny);
       // fmt::print("dx = {}, dy = {}\n", dx, dy);
       switch (m_mode) {
         case pz_mode::x_and_y:
@@ -360,8 +361,8 @@ void w_Coordsys::wheelEvent(QWheelEvent* event) {
     //     "numTicks = {}\n",
     //     m_nx_hot, m_ny_hot, m_hot, numTicks);
 
-    double x = cs->x.to_a(m_nx_hot);
-    double y = cs->y.to_a(m_ny_hot);
+    double x = cs->x.w_to_a(m_nx_hot);
+    double y = cs->y.w_to_a(m_ny_hot);
 
     double dx_min = x - cs->x.min();
     double dx_max = cs->x.max() - x;

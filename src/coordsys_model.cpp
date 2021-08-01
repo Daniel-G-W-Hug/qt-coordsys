@@ -14,10 +14,10 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
 
         // connect all points on each line
         for (int j = 0; j < line[i].size() - 1; ++j) {
-          int nx1 = cs->x.to_w(line[i][j].x);
-          int ny1 = cs->y.to_w(line[i][j].y);
-          int nx2 = cs->x.to_w(line[i][j + 1].x);
-          int ny2 = cs->y.to_w(line[i][j + 1].y);
+          int nx1 = cs->x.au_to_w(line[i][j].x);
+          int ny1 = cs->y.au_to_w(line[i][j].y);
+          int nx2 = cs->x.au_to_w(line[i][j + 1].x);
+          int ny2 = cs->y.au_to_w(line[i][j + 1].y);
           qp->drawLine(nx1, ny1, nx2, ny2);
         }
       }
@@ -28,8 +28,8 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
 
     for (int i = 0; i < pt.size(); ++i) {
       if (pt_id[i].active) { // only draw active pts into cs
-        int nx = cs->x.to_w(pt[i].x);
-        int ny = cs->y.to_w(pt[i].y);
+        int nx = cs->x.au_to_w(pt[i].x);
+        int ny = cs->y.au_to_w(pt[i].y);
         qp->setPen(pt_mark[i].pen);
 
         switch (pt_mark[i].symbol) {

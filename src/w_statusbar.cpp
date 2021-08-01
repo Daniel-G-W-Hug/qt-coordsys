@@ -111,10 +111,31 @@ void w_Statusbar::draw(QPainter* qp) {
   qp->drawText(border_dist + undo_len + 15, nypos, m);
 
   // print (x,y)-Position of mouse pointer in hot area
+  // data must be send as scaled data for logarithmic scaling
   if (m_hot) {
     QString x = QString::number(m_x, 'g', 3);
     QString y = QString::number(m_y, 'g', 3);
-    QString s = QString("(x = ") + x + QString(", y = ") + y + QString(")");
+
+    QString s1;
+    switch (m_xscaling) {
+      case Scaling::linear:
+        s1 = QString("(x = ") + x;
+        break;
+      case Scaling::logarithmic:
+        s1 = QString("(log10(x) = ") + x;
+        break;
+    }
+    QString s2;
+    switch (m_yscaling) {
+      case Scaling::linear:
+        s2 = QString(", y = ") + y + QString(")");
+        break;
+      case Scaling::logarithmic:
+        s2 = QString(", log10(y) = ") + y + QString(")");
+        break;
+    }
+
+    QString s = s1 + s2;
     qp->drawText(w_width / 2 - fm.horizontalAdvance(s) / 2, nypos, s);
   }
 
@@ -177,6 +198,17 @@ void w_Statusbar::on_labelChanged(std::string label) {
     // update only if any value has changed
     // fmt::print("received labelChanged event: {}\n", label);
     m_label = label;
+    update();
+  }
+}
+
+void w_Statusbar::on_scalingChanged(Scaling xscal, Scaling yscal) {
+
+  if (m_xscaling != xscal || m_yscaling != yscal) {
+    // update only if any value has changed
+    // fmt::print("received scalingChanged event.\n");
+    m_xscaling = xscal;
+    m_yscaling = yscal;
     update();
   }
 }

@@ -48,6 +48,7 @@ signals:
   void modeChanged(pz_action action, pz_mode mode);
   void undoChanged(int undo_steps);
   void labelChanged(std::string new_label);
+  void scalingChanged(Scaling xscal, Scaling yscal);
 
 private:
   Coordsys* cs;

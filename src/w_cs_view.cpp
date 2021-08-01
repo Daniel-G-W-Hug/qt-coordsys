@@ -38,9 +38,14 @@ w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent)
   connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
   connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
           SLOT(on_labelChanged(std::string)));
+  connect(wcs, SIGNAL(scalingChanged(Scaling, Scaling)), wsb,
+          SLOT(on_scalingChanged(Scaling, Scaling)));
 
   // update status bar with label of first model
   emit wcs->labelChanged(cm->label());
+
+  // update status bar with axis scaling
+  emit wcs->scalingChanged(cs->x.scaling(), cs->y.scaling());
 }
 
 w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
@@ -86,7 +91,12 @@ w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
   connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
   connect(wcs, SIGNAL(labelChanged(std::string)), wsb,
           SLOT(on_labelChanged(std::string)));
+  connect(wcs, SIGNAL(scalingChanged(Scaling, Scaling)), wsb,
+          SLOT(on_scalingChanged(Scaling, Scaling)));
 
   // update status bar with label of first model
   emit wcs->labelChanged(vm[0]->label());
+
+  // update status bar with axis scaling
+  emit wcs->scalingChanged(cs->x.scaling(), cs->y.scaling());
 }

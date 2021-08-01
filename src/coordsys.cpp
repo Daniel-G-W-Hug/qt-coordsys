@@ -58,45 +58,43 @@ Axis::Axis(widget_axis_data wd, axis_data ad) : wd(wd), ad(ad) {
   // fmt::print("axis ctor: mo={}, sf={}\n", mo, sf);
 }
 
-// axis to widget transformation
-int Axis::to_w(double axis_value, bool scaled) const {
-  if (!scaled) {
-    return sf * (axis_value - ad.min) + mo;
-  } else {
-    switch (ad.scaling) {
-      case Scaling::linear:
-        {
-          return sf * (axis_value - ad.min) + mo;
-          break;
-        }
-      case Scaling::logarithmic:
-        {
-          return sf * (std::log10(axis_value) - ad.min) + mo;
-          return 0;
-          break;
-        }
-    }
+// (scaled) axis to widget transformation
+int Axis::a_to_w(double scaled_value) const {
+  return sf * (scaled_value - ad.min) + mo;
+}
+
+// unscaled axis to widget transformation
+int Axis::au_to_w(double unscaled_value) const {
+  switch (ad.scaling) {
+    case Scaling::linear:
+      {
+        return sf * (unscaled_value - ad.min) + mo;
+        break;
+      }
+    case Scaling::logarithmic:
+      {
+        return sf * (std::log10(unscaled_value) - ad.min) + mo;
+        break;
+      }
   }
 }
 
-// widget to axis transformation (noch überprüfen!)
-double Axis::to_a(int nvalue, bool scaled) const {
-  if (!scaled) {
-    return (nvalue - mo) / sf + ad.min;
-  } else {
-    switch (ad.scaling) {
-      case Scaling::linear:
-        {
-          return (nvalue - mo) / sf + ad.min;
-          break;
-        }
-      case Scaling::logarithmic:
-        {
-          return std::pow(10, (nvalue - mo) / sf + ad.min);
-          return 0;
-          break;
-        }
-    }
+// widget to (scaled) axis transformation
+double Axis::w_to_a(int npos) const { return (npos - mo) / sf + ad.min; }
+
+// widget to axis transformation
+double Axis::w_to_au(int npos) const {
+  switch (ad.scaling) {
+    case Scaling::linear:
+      {
+        return (npos - mo) / sf + ad.min;
+        break;
+      }
+    case Scaling::logarithmic:
+      {
+        return std::pow(10, (npos - mo) / sf + ad.min);
+        break;
+      }
   }
 }
 
@@ -109,8 +107,6 @@ void Axis::draw(QPainter* qp, int offset) {
   // Get QFontMetrics reference
   QFontMetrics fm = qp->fontMetrics();
 
-  bool scaled = false;
-
   switch (ad.direction) {
     case Direction::x:
       {
@@ -120,7 +116,7 @@ void Axis::draw(QPainter* qp, int offset) {
         // major notches
         std::vector<double> major_val = get_major_pos();
         for (int i = 0; i < major_val.size(); ++i) {
-          int npos = to_w(major_val[i], scaled);
+          int npos = a_to_w(major_val[i]);
           if (npos >= nmin() && npos <= nmax()) { // just draw within cs area
             qp->drawLine(npos, offset, npos, offset + 8);
             // notch labels
@@ -132,7 +128,7 @@ void Axis::draw(QPainter* qp, int offset) {
         // minor notches (w/o notch labels)
         std::vector<double> minor_val = get_minor_pos(major_val);
         for (int i = 0; i < minor_val.size(); ++i) {
-          int npos = to_w(minor_val[i], scaled);
+          int npos = a_to_w(minor_val[i]);
           if (npos >= nmin() && npos <= nmax()) { // just draw within cs area
             qp->drawLine(npos, offset, npos, offset + 5);
           }
@@ -169,7 +165,7 @@ void Axis::draw(QPainter* qp, int offset) {
         // major notches
         std::vector<double> major_val = get_major_pos();
         for (int i = 0; i < major_val.size(); ++i) {
-          int npos = to_w(major_val[i], scaled);
+          int npos = a_to_w(major_val[i]);
           if (npos <= nmin() &&
               npos >= nmax()) { // just draw within cs area (y!)
             qp->drawLine(offset - 8, npos, offset, npos);
@@ -182,7 +178,7 @@ void Axis::draw(QPainter* qp, int offset) {
         // minor notches (w/o notch labels)
         std::vector<double> minor_val = get_minor_pos(major_val);
         for (int i = 0; i < minor_val.size(); ++i) {
-          int npos = to_w(minor_val[i], scaled);
+          int npos = a_to_w(minor_val[i]);
           if (npos <= nmin() &&
               npos >= nmax()) { // just draw within cs area (y!)
             qp->drawLine(offset - 5, npos, offset, npos);
@@ -356,12 +352,11 @@ void Coordsys::draw(QPainter* qp) {
 
   // draw helper lines
   qp->setPen(QPen(Qt::gray, 1, Qt::DotLine));
-  bool scaled = false;
 
   { // draw helper lines through major notches
     std::vector<double> major_val = x.get_major_pos();
     for (int i = 0; i < major_val.size(); ++i) {
-      int npos = x.to_w(major_val[i], scaled);
+      int npos = x.a_to_w(major_val[i]);
       if (npos >= x.nmin() && npos <= x.nmax()) { // just draw within cs area
         qp->drawLine(npos, y.nmin(), npos, y.nmax());
       }
@@ -371,7 +366,7 @@ void Coordsys::draw(QPainter* qp) {
   { // draw helper lines through major notches
     std::vector<double> major_val = y.get_major_pos();
     for (int i = 0; i < major_val.size(); ++i) {
-      int npos = y.to_w(major_val[i], scaled);
+      int npos = y.a_to_w(major_val[i]);
       if (npos <= y.nmin() &&
           npos >= y.nmax()) { // just draw within cs area (y!)
         qp->drawLine(x.nmin(), npos, x.nmax(), npos);

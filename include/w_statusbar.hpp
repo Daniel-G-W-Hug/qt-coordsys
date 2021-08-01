@@ -28,6 +28,7 @@ private slots:
   void on_modeChanged(pz_action action, pz_mode mode);
   void on_undoChanged(int undo_steps);
   void on_labelChanged(std::string label);
+  void on_scalingChanged(Scaling xscal, Scaling yscal);
 
 private:
   int w_width;
@@ -54,4 +55,8 @@ private:
 
   // number of undo steps available
   int m_undo_steps{0};
+
+  // axis scaling
+  Scaling m_xscaling{Scaling::linear};
+  Scaling m_yscaling{Scaling::linear};
 };
