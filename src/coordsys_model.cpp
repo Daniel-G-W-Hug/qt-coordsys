@@ -4,6 +4,23 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
 
   qp->save();
 
+  { // draw vectors:
+
+    // draw each poly line
+    for (int i = 0; i < vec.size(); ++i) {
+      if (vec_id[i].active) { // only draw active vectors into cs
+
+        qp->setPen(vec_mark[i].pen);
+
+        int nx1 = cs->x.au_to_w(vec[i].from.x);
+        int ny1 = cs->y.au_to_w(vec[i].from.y);
+        int nx2 = cs->x.au_to_w(vec[i].to.x);
+        int ny2 = cs->y.au_to_w(vec[i].to.y);
+        qp->drawLine(nx1, ny1, nx2, ny2);
+      }
+    }
+  }
+
   { // draw lines:
 
     // draw each poly line
@@ -75,7 +92,8 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
   qp->restore();
 }
 
-[[maybe_unused]] int Coordsys_model::add_p(const pt2d p_in, const pt2d_mark m) {
+[[maybe_unused]] int Coordsys_model::add_p(const pt2d& p_in,
+                                           const pt2d_mark m) {
 
   pt.push_back(p_in);
   pt_mark.push_back(m);
@@ -88,10 +106,10 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
 }
 
 //
-// hint: using line2d = std::vector<pt2d>;
+// hint: using ln2d = std::vector<pt2d>;
 //
-[[maybe_unused]] int Coordsys_model::add_l(const line2d& vp_in,
-                                           const line2d_mark m) {
+[[maybe_unused]] int Coordsys_model::add_l(const ln2d& vp_in,
+                                           const ln2d_mark m) {
 
   // the separate copy should not be needed, since it is done in push_back
   // anyway
@@ -119,6 +137,19 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs) {
       pt_id.push_back(new_pt_id);
     }
   }
+
+  return new_id.id;
+}
+
+[[maybe_unused]] int Coordsys_model::add_v(const vec2d& v_in,
+                                           const vec2d_mark m) {
+
+  vec.push_back(v_in);
+  vec_mark.push_back(m);
+
+  mark_id new_id;
+  new_id.id = unique_id++;
+  vec_id.push_back(new_id);
 
   return new_id.id;
 }

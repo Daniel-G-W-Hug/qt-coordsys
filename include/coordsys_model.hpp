@@ -34,7 +34,7 @@ struct pt2d_mark {
 const pt2d_mark pt2d_mark_default; // for default arguments
 
 // this struct should be used by the user to mark lines
-struct line2d_mark {
+struct ln2d_mark {
 
   QPen pen{QPen(Qt::black, 1, Qt::SolidLine)};
 
@@ -46,7 +46,25 @@ struct line2d_mark {
               // item shall belong to (for selection)
 };
 
-const line2d_mark line2d_mark_default; // for default arguments;
+const ln2d_mark ln2d_mark_default; // for default arguments;
+
+// vector as directed line
+struct vec2d {
+  pt2d from; // from = (0,0) => position vector
+             // else => free vector
+  pt2d to;
+};
+
+// this struct should be used by the user to mark vectors
+struct vec2d_mark {
+
+  QPen pen{QPen(Qt::black, 1, Qt::SolidLine)};
+
+  int grp{0}; // user provided group the
+              // item shall belong to (for selection)
+};
+
+const vec2d_mark vec2d_mark_default; // for default arguments;
 
 // ----------------------------------------------------------------------------
 // this is used internally, not by the user directly
@@ -65,9 +83,9 @@ struct mark_id {
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
-// convenience alias to make pt2d and line2d look similar
+// convenience alias to make pt2d and ln2d look similar
 // ----------------------------------------------------------------------------
-using line2d = std::vector<pt2d>;
+using ln2d = std::vector<pt2d>;
 // ----------------------------------------------------------------------------
 
 class Coordsys_model {
@@ -75,11 +93,14 @@ public:
   void draw(QPainter* qp, Coordsys* cs);
 
   // add single point
-  [[maybe_unused]] int add_p(const pt2d p_in,
+  [[maybe_unused]] int add_p(const pt2d& p_in,
                              const pt2d_mark m = pt2d_mark_default);
   // add single line
   [[maybe_unused]] int add_l(const std::vector<pt2d>& vp_in,
-                             const line2d_mark m = line2d_mark_default);
+                             const ln2d_mark m = ln2d_mark_default);
+  // add vector
+  [[maybe_unused]] int add_v(const vec2d& v_in,
+                             const vec2d_mark m = vec2d_mark_default);
 
   void set_label(const std::string& new_label);
   std::string label() { return m_label; }
@@ -97,9 +118,14 @@ private:
   std::vector<mark_id> pt_id;
 
   // data for lines (same index is for same line)
-  std::vector<line2d> line;
-  std::vector<line2d_mark> line_mark;
+  std::vector<ln2d> line;
+  std::vector<ln2d_mark> line_mark;
   std::vector<mark_id> line_id;
+
+  // data for vectors (same index is for same vector)
+  std::vector<vec2d> vec;
+  std::vector<vec2d_mark> vec_mark;
+  std::vector<mark_id> vec_id;
 
   // model label (e.g. time stamp description)
   std::string m_label;

@@ -58,11 +58,13 @@ set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
+target_include_directories(${PROJECT_NAME} PUBLIC /Users/daniel/prg/cpp/include)
+
 #
 # fmt library
 #
 find_package(fmt)
-#target_link_libraries(${PROJECT_NAME} fmt::fmt)
+# target_link_libraries(${PROJECT_NAME} fmt::fmt)
 
 #
 # Use the Widgets module from Qt 6.
