@@ -9,20 +9,23 @@
 #include <QWidget>
 #include <QtWidgets>
 
-class w_Cs_view : public QWidget {
-  Q_OBJECT
+class w_Cs_view : public QWidget
+{
+    Q_OBJECT
 
-public:
-  w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent = nullptr);
-  w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
-            QWidget* parent = nullptr);
+  public:
 
-  // ATTENTION: caller is responsible that model ptr is valid during life time
+    w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent = nullptr);
+    w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
+              QWidget* parent = nullptr);
 
-private:
-  w_Coordsys* wcs;
-  w_Statusbar* wsb;
-  QSlider* slider;
+    // ATTENTION: caller is responsible that model ptr is valid during life time
 
-  QGroupBox* w1; // vertical box of CS-widget and slider
+  private:
+
+    w_Coordsys* wcs;
+    w_Statusbar* wsb;
+    QSlider* slider;
+
+    QGroupBox* w1; // vertical box of CS-widget and slider
 };

@@ -9,47 +9,26 @@
 
 Coordsys make_cs()
 {
-    axis_data ax, ay;
-    ax.min = -0.5;
-    ax.max = 1.5;
-    ax.direction = Direction::x;
-    // ax.scaling = Scaling::logarithmic;
-    ax.label = "x label";
-    ax.major_anchor = 0.0;
-    ax.major_delta = 1.0;
-    ax.minor_intervals = 4;
+    axis_data ax(
+        axis_rng(-0.6, 1.6),
+        axis_dir::x,
+        axis_scal::linear,
+        "x label",
+        axis_ticks(0.0, 0.4, 4));
 
-    ay.min = -0.1;
-    ay.max = 1.1;
-    ay.major_anchor = 0.0;
-    ay.major_delta = 1.0;
-    ay.minor_intervals = 4;
+    axis_data ay(
+        axis_rng(-0.2, 1.2),
+        axis_dir::y,
+        axis_scal::linear,
+        "y label",
+        axis_ticks(0.0, 0.2, 4));
 
-    // ay.min = -2;
-    // ay.max = 3;
-    // ay.scaling = Scaling::logarithmic;
-
-    // ay.min = 0;
-    // ay.max = 1001;
-    // ay.major_delta = 100.0;
-
-    ay.direction = Direction::y;
-    ay.label = "y label";
-
-    widget_axis_data wx, wy;
-    wx.w_size = 600;
-    wx.a_length = 520;
-    wx.a_offset = 50;
-
-    wy.w_size = 400;
-    wy.a_length = 320;
-    wy.a_offset = 50;
-
-    coordsys_data cd;
-    cd.title = "Coordsys Title";
+    widget_axis_data wx(600, 60, 520);
+    widget_axis_data wy(400, 50, 320);
 
     Axis x(wx, ax);
     Axis y(wy, ay);
+    coordsys_data cd("Coordsys Title");
     Coordsys cs(x, y, cd);
 
     return cs;
