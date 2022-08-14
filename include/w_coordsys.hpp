@@ -7,7 +7,7 @@
 #include <QWidget>
 #include <QtWidgets>
 
-// pan and zoom action
+// pan, zoom and wheel_zoom actions
 enum class pz_action
 {
     none,

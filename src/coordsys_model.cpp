@@ -43,6 +43,27 @@ void Coordsys_model::draw(QPainter* qp, Coordsys* cs)
                     int ny2 = cs->y.au_to_w(line[i][j + 1].y);
                     qp->drawLine(nx1, ny1, nx2, ny2);
                 }
+
+                if (line_mark[i].mark_area)
+                {
+                    qp->setPen(line_mark[i].pen);
+                    qp->setBrush(line_mark[i].area_col);
+
+                    QPainterPath polyPath;
+                    polyPath.moveTo(cs->x.au_to_w(line[i][0].x), cs->y.au_to_w(0.0));
+
+                    // connect all points on each line
+                    for (int j = 0; j < line[i].size(); ++j)
+                    {
+                        polyPath.lineTo(cs->x.au_to_w(line[i][j].x),
+                                        cs->y.au_to_w(line[i][j].y));
+                    }
+
+                    polyPath.lineTo(cs->x.au_to_w(line[i][line[i].size() - 1].x),
+                                    cs->y.au_to_w(0.0));
+                    polyPath.closeSubpath();
+                    qp->drawPath(polyPath);
+                }
             }
         }
     }

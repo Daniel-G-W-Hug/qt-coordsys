@@ -3,6 +3,7 @@
 #include "coordsys.hpp"
 
 #include <QPainter>
+#include <QPainterPath>
 #include <QPen>
 #include <cassert> // attribute [[maybe_unused]]
 #include <vector>
@@ -51,6 +52,9 @@ struct ln2d_mark
     bool mark_pts{false};
     int delta{1}; // 1 shows every point, 2 every second, ...
     pt2d_mark pm{};
+
+    bool mark_area{false};
+    QColor area_col{QColor(0, 128, 0, 128)};
 
     int grp{0}; // user provided group the
                 // item shall belong to (for selection)

@@ -127,6 +127,26 @@ Coordsys_model make_model()
         cm.add_l(l2, l2m);
     }
 
+    {
+
+        ln2d l2;
+        double x = 0.25;
+        double dx = 0.01;
+        double x_eps = 0.1 * dx;
+
+        while (x <= .75 + x_eps)
+        {
+            l2.push_back(pt2d(x, hd::smoother_step(0.0, 1.0, x)));
+            x += dx;
+        }
+        ln2d_mark l2m;
+        l2m.mark_area = true;
+        l2m.pen = QPen(Qt::green, 2, Qt::SolidLine);
+        // l2m.area_col = QColor(0, 0, 128, 128);
+
+        cm.add_l(l2, l2m);
+    }
+
     vec2d v1;
     v1.to.x = 2;
     v1.to.y = 3;
