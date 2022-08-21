@@ -15,10 +15,10 @@
 #             or cmake .. -G "Visual Studio 17 2022" -T host=x64 -A x64
 #
 # to build execute from build directory:
-#                  
+#
 #                cmake --build .
 #             or ninja
-#            
+#
 # ##############################################################################
 #]]
 
@@ -32,9 +32,10 @@ include(FetchContent)
 # set(CMAKE_CXX_COMPILER "g++-12")
 #]]
 
-project(qt-coordsys
-        VERSION 0.1
-        LANGUAGES CXX)
+project(
+  qt-coordsys
+  VERSION 0.1
+  LANGUAGES CXX)
 
 #
 # Compiler flags
@@ -73,22 +74,11 @@ if(CMAKE_BUILD_TYPE EQUAL "Debug")
   endif()
 endif()
 
-
 # However, the file(GLOB...) allows for wildcard additions:
-set(SOURCES src/main.cpp
-            src/coordsys.cpp
-            src/w_coordsys.cpp
-            src/w_cs_view.cpp
-            src/coordsys_model.cpp
-            src/w_statusbar.cpp
-            )
-set(HEADERS include/coordsys.hpp
-            include/w_coordsys.hpp
-            include/w_cs_view.hpp
-            include/coordsys_model.hpp
-            include/w_statusbar.hpp
-            )
-
+set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
+            src/coordsys_model.cpp src/w_statusbar.cpp)
+set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
+            include/coordsys_model.hpp include/w_statusbar.hpp)
 
 set(EXEC_NAME ${PROJECT_NAME})
 add_executable(${EXEC_NAME} ${SOURCES} ${HEADERS})
@@ -96,7 +86,8 @@ add_executable(${EXEC_NAME} ${SOURCES} ${HEADERS})
 # target link libraries have to be added AFTER add_executable or add_library!
 target_include_directories(${EXEC_NAME} PRIVATE include)
 target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/../../include)
+target_include_directories(${EXEC_NAME}
+                           PRIVATE ${CMAKE_SOURCE_DIR}/../../include)
 
 #
 # Use the Widgets module from Qt 6.
@@ -107,4 +98,5 @@ find_package(
   COMPONENTS Widgets Gui
   REQUIRED)
 
-target_link_libraries(${EXEC_NAME} PRIVATE fmt::fmt Qt6::Widgets Qt6::Gui)
+target_link_libraries(${EXEC_NAME} PRIVATE fmt::fmt-header-only Qt6::Widgets
+                                           Qt6::Gui)

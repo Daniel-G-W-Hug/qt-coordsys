@@ -37,21 +37,21 @@ Axis::Axis(widget_axis_data wd_in, axis_data ad_in) :
 
     switch (ad.dir)
     {
-    case axis_dir::x:
-    {
-        // growing axis direction aligned with growing direction on paint device
-        mo = wd.a_offset;
-        sf = wd.a_length / (ad.rng.max - ad.rng.min);
-        break;
-    }
-    case axis_dir::y:
-    {
-        // growing axis direction not aligned with growing direction on paint
-        // device - store min_offset on paint device
-        mo = wd.w_size - wd.a_offset;
-        sf = -wd.a_length / (ad.rng.max - ad.rng.min);
-        break;
-    }
+        case axis_dir::x:
+        {
+            // growing axis direction aligned with growing direction on paint device
+            mo = wd.a_offset;
+            sf = wd.a_length / (ad.rng.max - ad.rng.min);
+            break;
+        }
+        case axis_dir::y:
+        {
+            // growing axis direction not aligned with growing direction on paint
+            // device - store min_offset on paint device
+            mo = wd.w_size - wd.a_offset;
+            sf = -wd.a_length / (ad.rng.max - ad.rng.min);
+            break;
+        }
     }
 
     // fmt::print("axis ctor: mo={}, sf={}\n", mo, sf);
@@ -68,18 +68,24 @@ int Axis::au_to_w(double unscaled_value) const
 {
     switch (ad.scal)
     {
-    case axis_scal::linear:
-    
-        return sf * (unscaled_value - ad.rng.min) + mo;
-        break;
-    
-    case axis_scal::logarithmic:
-    
-        return sf * (std::log10(unscaled_value) - ad.rng.min) + mo;
-        break;
+        case axis_scal::linear:
 
-    default:
-     std::unreachable();
+            return sf * (unscaled_value - ad.rng.min) + mo;
+            break;
+
+        case axis_scal::logarithmic:
+
+            return sf * (std::log10(unscaled_value) - ad.rng.min) + mo;
+            break;
+
+        default:
+#if defined(_MSC_VER)
+            // MSVC is already conforming in C++23 mode
+            std::unreachable();
+#else
+            // should work prior to gcc-12 and clang-15
+            __builtin_unreachable();
+#endif
     }
 }
 
@@ -91,18 +97,24 @@ double Axis::w_to_au(int npos) const
 {
     switch (ad.scal)
     {
-    case axis_scal::linear:
+        case axis_scal::linear:
 
-        return (npos - mo) / sf + ad.rng.min;
-        break;
-    
-    case axis_scal::logarithmic:
-    
-        return std::pow(10, (npos - mo) / sf + ad.rng.min);
-        break;
-    
-    default:
-        std::unreachable();
+            return (npos - mo) / sf + ad.rng.min;
+            break;
+
+        case axis_scal::logarithmic:
+
+            return std::pow(10, (npos - mo) / sf + ad.rng.min);
+            break;
+
+        default:
+#if defined(_MSC_VER)
+            // MSVC is already conforming in C++23 mode
+            std::unreachable();
+#else
+            // should work prior to gcc-12 and clang-15
+            __builtin_unreachable();
+#endif
     }
 }
 
@@ -118,118 +130,118 @@ void Axis::draw(QPainter* qp, int offset)
 
     switch (ad.dir)
     {
-    case axis_dir::x:
-    {
-        // axis
-        qp->drawLine(nmin(), offset, nmax(), offset);
-
-        // major notches
-        std::vector<double> major_val = get_major_pos();
-        for (int i = 0; i < major_val.size(); ++i)
+        case axis_dir::x:
         {
-            int npos = a_to_w(major_val[i]);
-            if (npos >= nmin() && npos <= nmax())
-            { // just draw within cs area
-                qp->drawLine(npos, offset, npos, offset + 8);
-                // notch labels
-                QString s = QString::number(major_val[i]);
-                qp->drawText(npos - fm.horizontalAdvance(s) / 2,
-                             offset + fm.height() + 6, s);
+            // axis
+            qp->drawLine(nmin(), offset, nmax(), offset);
+
+            // major notches
+            std::vector<double> major_val = get_major_pos();
+            for (int i = 0; i < major_val.size(); ++i)
+            {
+                int npos = a_to_w(major_val[i]);
+                if (npos >= nmin() && npos <= nmax())
+                { // just draw within cs area
+                    qp->drawLine(npos, offset, npos, offset + 8);
+                    // notch labels
+                    QString s = QString::number(major_val[i]);
+                    qp->drawText(npos - fm.horizontalAdvance(s) / 2,
+                                 offset + fm.height() + 6, s);
+                }
             }
-        }
-        // minor notches (w/o notch labels)
-        std::vector<double> minor_val = get_minor_pos(major_val);
-        for (int i = 0; i < minor_val.size(); ++i)
-        {
-            int npos = a_to_w(minor_val[i]);
-            if (npos >= nmin() && npos <= nmax())
-            { // just draw within cs area
-                qp->drawLine(npos, offset, npos, offset + 5);
+            // minor notches (w/o notch labels)
+            std::vector<double> minor_val = get_minor_pos(major_val);
+            for (int i = 0; i < minor_val.size(); ++i)
+            {
+                int npos = a_to_w(minor_val[i]);
+                if (npos >= nmin() && npos <= nmax())
+                { // just draw within cs area
+                    qp->drawLine(npos, offset, npos, offset + 5);
+                }
             }
-        }
 
-        // x axis label
-        qp->save();
-        qp->setFont(QFont("Helvetica", 14, QFont::Bold));
-        QFontMetrics fmbx = qp->fontMetrics();
-        qp->drawText((ad.rng.max - ad.rng.min) / 2 * sf + mo -
-                         fmbx.horizontalAdvance(label) / 2,
-                     offset + fmbx.height() + 25, label);
-        qp->restore();
-
-        // notify user on log10 scaling of axis
-        if (ad.scal == axis_scal::logarithmic)
-        {
+            // x axis label
             qp->save();
-            qp->setFont(QFont("Helvetica", 14, QFont::Normal));
+            qp->setFont(QFont("Helvetica", 14, QFont::Bold));
             QFontMetrics fmbx = qp->fontMetrics();
-            qp->drawText((ad.rng.max - ad.rng.min) * sf + mo -
-                             fmbx.horizontalAdvance(QString("log10(x)")),
-                         offset + fmbx.height() + 25, QString("log10(x)"));
+            qp->drawText((ad.rng.max - ad.rng.min) / 2 * sf + mo -
+                             fmbx.horizontalAdvance(label) / 2,
+                         offset + fmbx.height() + 25, label);
             qp->restore();
-        }
 
-        break;
-    }
-
-    case axis_dir::y:
-    {
-        // axis
-        qp->drawLine(offset, nmin(), offset, nmax());
-
-        // major notches
-        std::vector<double> major_val = get_major_pos();
-        for (int i = 0; i < major_val.size(); ++i)
-        {
-            int npos = a_to_w(major_val[i]);
-            if (npos <= nmin() &&
-                npos >= nmax())
-            { // just draw within cs area (y!)
-                qp->drawLine(offset - 8, npos, offset, npos);
-                // notch labels
-                QString s = QString::number(major_val[i]);
-                qp->drawText(offset - fm.horizontalAdvance(s) - 11,
-                             npos + fm.height() / 3, s);
+            // notify user on log10 scaling of axis
+            if (ad.scal == axis_scal::logarithmic)
+            {
+                qp->save();
+                qp->setFont(QFont("Helvetica", 14, QFont::Normal));
+                QFontMetrics fmbx = qp->fontMetrics();
+                qp->drawText((ad.rng.max - ad.rng.min) * sf + mo -
+                                 fmbx.horizontalAdvance(QString("log10(x)")),
+                             offset + fmbx.height() + 25, QString("log10(x)"));
+                qp->restore();
             }
+
+            break;
         }
-        // minor notches (w/o notch labels)
-        std::vector<double> minor_val = get_minor_pos(major_val);
-        for (int i = 0; i < minor_val.size(); ++i)
+
+        case axis_dir::y:
         {
-            int npos = a_to_w(minor_val[i]);
-            if (npos <= nmin() &&
-                npos >= nmax())
-            { // just draw within cs area (y!)
-                qp->drawLine(offset - 5, npos, offset, npos);
+            // axis
+            qp->drawLine(offset, nmin(), offset, nmax());
+
+            // major notches
+            std::vector<double> major_val = get_major_pos();
+            for (int i = 0; i < major_val.size(); ++i)
+            {
+                int npos = a_to_w(major_val[i]);
+                if (npos <= nmin() &&
+                    npos >= nmax())
+                { // just draw within cs area (y!)
+                    qp->drawLine(offset - 8, npos, offset, npos);
+                    // notch labels
+                    QString s = QString::number(major_val[i]);
+                    qp->drawText(offset - fm.horizontalAdvance(s) - 11,
+                                 npos + fm.height() / 3, s);
+                }
             }
-        }
+            // minor notches (w/o notch labels)
+            std::vector<double> minor_val = get_minor_pos(major_val);
+            for (int i = 0; i < minor_val.size(); ++i)
+            {
+                int npos = a_to_w(minor_val[i]);
+                if (npos <= nmin() &&
+                    npos >= nmax())
+                { // just draw within cs area (y!)
+                    qp->drawLine(offset - 5, npos, offset, npos);
+                }
+            }
 
-        // y axis label
-        qp->save();
-        qp->setFont(QFont("Helvetica", 14, QFont::Bold));
-        QFontMetrics fmby = qp->fontMetrics();
-        qp->translate(offset - fmby.height() - 30,
-                      (ad.rng.max - ad.rng.min) * sf / 2 + mo -
-                          fmby.horizontalAdvance(label) / 2);
-        qp->rotate(90);
-        qp->drawText(0, 0, label);
-        qp->restore();
-
-        // notify user on log10 scaling of axis
-        if (ad.scal == axis_scal::logarithmic)
-        {
+            // y axis label
             qp->save();
-            qp->setFont(QFont("Helvetica", 14, QFont::Normal));
+            qp->setFont(QFont("Helvetica", 14, QFont::Bold));
             QFontMetrics fmby = qp->fontMetrics();
             qp->translate(offset - fmby.height() - 30,
-                          (ad.rng.max - ad.rng.min) * sf + mo);
+                          (ad.rng.max - ad.rng.min) * sf / 2 + mo -
+                              fmby.horizontalAdvance(label) / 2);
             qp->rotate(90);
-            qp->drawText(0, 0, QString("log10(y)"));
+            qp->drawText(0, 0, label);
             qp->restore();
-        }
 
-        break;
-    }
+            // notify user on log10 scaling of axis
+            if (ad.scal == axis_scal::logarithmic)
+            {
+                qp->save();
+                qp->setFont(QFont("Helvetica", 14, QFont::Normal));
+                QFontMetrics fmby = qp->fontMetrics();
+                qp->translate(offset - fmby.height() - 30,
+                              (ad.rng.max - ad.rng.min) * sf + mo);
+                qp->rotate(90);
+                qp->drawText(0, 0, QString("log10(y)"));
+                qp->restore();
+            }
+
+            break;
+        }
     }
 }
 
@@ -245,63 +257,63 @@ std::vector<double> Axis::get_major_pos() const
     switch (ad.scal)
     {
 
-    case axis_scal::linear:
-    {
-        double value = ad.ticks.major_anchor;
-        while (value >= ad.rng.min - ad.ticks.major_delta)
-        { // sweep left
-            if (value >= ad.rng.min - ad.ticks.major_delta &&
-                value <= ad.rng.max + ad.ticks.major_delta)
-            { // in interval now
-                notches.push_back(value);
+        case axis_scal::linear:
+        {
+            double value = ad.ticks.major_anchor;
+            while (value >= ad.rng.min - ad.ticks.major_delta)
+            { // sweep left
+                if (value >= ad.rng.min - ad.ticks.major_delta &&
+                    value <= ad.rng.max + ad.ticks.major_delta)
+                { // in interval now
+                    notches.push_back(value);
+                }
+                value -= ad.ticks.major_delta;
             }
-            value -= ad.ticks.major_delta;
-        }
-        // reverse vector
-        std::reverse(notches.begin(), notches.end());
+            // reverse vector
+            std::reverse(notches.begin(), notches.end());
 
-        value = ad.ticks.major_anchor;
-        while (value <= ad.rng.max + ad.ticks.major_delta)
-        { // sweep right
-            if (value >= ad.rng.min - ad.ticks.major_delta &&
-                value <= ad.rng.max + ad.ticks.major_delta &&
-                value != ad.ticks.major_anchor)
-            { // in interval now (w/o anchor point)
-                notches.push_back(value);
+            value = ad.ticks.major_anchor;
+            while (value <= ad.rng.max + ad.ticks.major_delta)
+            { // sweep right
+                if (value >= ad.rng.min - ad.ticks.major_delta &&
+                    value <= ad.rng.max + ad.ticks.major_delta &&
+                    value != ad.ticks.major_anchor)
+                { // in interval now (w/o anchor point)
+                    notches.push_back(value);
+                }
+                value += ad.ticks.major_delta;
             }
-            value += ad.ticks.major_delta;
+            break;
         }
-        break;
-    }
-    case axis_scal::logarithmic: // ignore user settings of anchor, major_delta
-                                 // and minor_intervals and create standardized
-                                 // log10 axis
-    {
-        double value = 1.0; // standard anchor value
-        while (value >= ad.rng.min - 1.0)
-        { // sweep left
-            if (value >= ad.rng.min - 1.0 &&
-                value <= ad.rng.max + 1.0)
-            { // in interval now
-                notches.push_back(value);
+        case axis_scal::logarithmic: // ignore user settings of anchor, major_delta
+                                     // and minor_intervals and create standardized
+                                     // log10 axis
+        {
+            double value = 1.0; // standard anchor value
+            while (value >= ad.rng.min - 1.0)
+            { // sweep left
+                if (value >= ad.rng.min - 1.0 &&
+                    value <= ad.rng.max + 1.0)
+                { // in interval now
+                    notches.push_back(value);
+                }
+                value -= 1.0;
             }
-            value -= 1.0;
-        }
-        // reverse vector
-        std::reverse(notches.begin(), notches.end());
+            // reverse vector
+            std::reverse(notches.begin(), notches.end());
 
-        value = 1.0; // standard anchor value
-        while (value <= ad.rng.max + 1.0)
-        { // sweep right
-            if (value >= ad.rng.min - 1.0 && value <= ad.rng.max + 1.0 &&
-                value != 1.0)
-            { // in interval now (w/o anchor point)
-                notches.push_back(value);
+            value = 1.0; // standard anchor value
+            while (value <= ad.rng.max + 1.0)
+            { // sweep right
+                if (value >= ad.rng.min - 1.0 && value <= ad.rng.max + 1.0 &&
+                    value != 1.0)
+                { // in interval now (w/o anchor point)
+                    notches.push_back(value);
+                }
+                value += 1.0;
             }
-            value += 1.0;
+            break;
         }
-        break;
-    }
     }
 
     // if (ad.dir == axis_dir::x) {
@@ -329,38 +341,38 @@ Axis::get_minor_pos(const std::vector<double>& major_pos) const
         switch (ad.scal)
         {
 
-        case axis_scal::linear:
-        {
-            // go through all major notches (there are at least two)
-            int last = major_pos.size() - 1;
-            for (int i = 0; i < last; ++i)
+            case axis_scal::linear:
             {
-                double delta =
-                    (major_pos[i + 1] - major_pos[i]) / ad.ticks.minor_intervals;
-                for (int j = 1; j < ad.ticks.minor_intervals;
-                     ++j)
-                { // skip the major notches
-                    notches.push_back(j * delta + major_pos[i]);
-                }
-            }
-            break;
-        }
-        case axis_scal::logarithmic:
-        {
-            // go through all major notches (there are at least two)
-            int last = major_pos.size() - 1;
-            for (int i = 0; i < last; ++i)
-            {
-                double value = major_pos[i];
-                double delta = std::pow(10, std::floor(value));
-                for (int j = 0; j < 8; ++j)
+                // go through all major notches (there are at least two)
+                int last = major_pos.size() - 1;
+                for (int i = 0; i < last; ++i)
                 {
-                    value = std::log10(std::pow(10, value) + delta);
-                    notches.push_back(value);
+                    double delta =
+                        (major_pos[i + 1] - major_pos[i]) / ad.ticks.minor_intervals;
+                    for (int j = 1; j < ad.ticks.minor_intervals;
+                         ++j)
+                    { // skip the major notches
+                        notches.push_back(j * delta + major_pos[i]);
+                    }
                 }
+                break;
             }
-            break;
-        }
+            case axis_scal::logarithmic:
+            {
+                // go through all major notches (there are at least two)
+                int last = major_pos.size() - 1;
+                for (int i = 0; i < last; ++i)
+                {
+                    double value = major_pos[i];
+                    double delta = std::pow(10, std::floor(value));
+                    for (int j = 0; j < 8; ++j)
+                    {
+                        value = std::log10(std::pow(10, value) + delta);
+                        notches.push_back(value);
+                    }
+                }
+                break;
+            }
         }
     }
 
