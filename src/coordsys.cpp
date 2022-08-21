@@ -9,6 +9,7 @@
 #include <cmath>     // for mathematical functions used for axis scaling (e.g. log10, pow, ceil)
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "fmt/format.h"
@@ -68,15 +69,17 @@ int Axis::au_to_w(double unscaled_value) const
     switch (ad.scal)
     {
     case axis_scal::linear:
-    {
+    
         return sf * (unscaled_value - ad.rng.min) + mo;
         break;
-    }
+    
     case axis_scal::logarithmic:
-    {
+    
         return sf * (std::log10(unscaled_value) - ad.rng.min) + mo;
         break;
-    }
+
+    default:
+     std::unreachable();
     }
 }
 
@@ -89,15 +92,17 @@ double Axis::w_to_au(int npos) const
     switch (ad.scal)
     {
     case axis_scal::linear:
-    {
+
         return (npos - mo) / sf + ad.rng.min;
         break;
-    }
+    
     case axis_scal::logarithmic:
-    {
+    
         return std::pow(10, (npos - mo) / sf + ad.rng.min);
         break;
-    }
+    
+    default:
+        std::unreachable();
     }
 }
 

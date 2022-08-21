@@ -6,30 +6,36 @@
 # usage: execute "cmake .." from build directory
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.23)
+
+include(FetchContent)
 
 #
-# to use gcc-10 and g++-10 instead of default c / c++ (must come before project
+# to use gcc-12 and g++-12 instead of default c / c++ (must come before project
 # line)
 #
 #[[
-# set(CMAKE_C_COMPILER "gcc-10")
-# set(CMAKE_CXX_COMPILER "g++-10")
+# set(CMAKE_C_COMPILER "gcc-12")
+# set(CMAKE_CXX_COMPILER "g++-12")
 #]]
 
 #
 # project name (=identical to executable name)
 #
-project(qt-coordsys)
+project(qt-coordsys VERSION 0.1 LANGUAGES CXX)
 
 #
 # Compiler flags
 #
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -pedantic")
+# make fmt available
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG master)
+FetchContent_MakeAvailable(fmt)
 
 #
 # configure qt
@@ -39,16 +45,22 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-#
-# add include directories for header files)
-#
-include_directories(${PROJECT_SOURCE_DIR}/include)
-# include_directories(
-# /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
-# )
+# set a default build type: Debug | RelWithDebInfo | Release | MinSizeRel
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Debug")
+  message(STATUS "Build type not specified: use Debug mode by default.")
+endif()
 
-# Can manually add the sources using the set command as follows: set(SOURCES
-# hello.cpp)
+if(CMAKE_BUILD_TYPE EQUAL "Debug")
+  if(MSVC)
+    # warning level 4 and all warnings as errors
+    add_compile_options(/W4 /WX)
+  else()
+    # lots of warnings and all warnings as errors
+    add_compile_options(-Wall -Wextra -pedantic -Werror)
+  endif()
+endif()
+
 
 # However, the file(GLOB...) allows for wildcard additions:
 set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
@@ -56,15 +68,14 @@ set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
 set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
             include/coordsys_model.hpp include/w_statusbar.hpp)
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_include_directories(${PROJECT_NAME} PUBLIC /Users/daniel/prg/cpp/include)
+set(EXEC_NAME ${PROJECT_NAME})
+add_executable(${EXEC_NAME} ${SOURCES} ${HEADERS})
 
-#
-# fmt library
-#
-find_package(fmt)
-# target_link_libraries(${PROJECT_NAME} fmt::fmt)
+# target link libraries have to be added AFTER add_executable or add_library!
+target_include_directories(${EXEC_NAME} PRIVATE include)
+target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(${EXEC_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/../../include)
 
 #
 # Use the Widgets module from Qt 6.
@@ -74,4 +85,5 @@ find_package(
   Qt6
   COMPONENTS Widgets Gui
   REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt Qt6::Widgets Qt6::Gui)
+
+target_link_libraries(${EXEC_NAME} PRIVATE fmt::fmt Qt6::Widgets Qt6::Gui)
