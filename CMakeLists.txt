@@ -1,28 +1,40 @@
-#
-# directory structure: . ├── build ├── CMakeLists.txt ├── include |   └── *.h
-# └── source └── *.cpp
+#[[
+# directory structure:
+# .
+# ├── build
+# ├── CMakeLists.txt
+# ├── include
+# |   └── *.[h|hpp]
+# └── source
+#     └── *.[cpp|cxx]
 #
 # ##############################################################################
-# usage: execute "cmake .." from build directory
+# to configure execute from build directory:
+#                cmake ..
+#             or cmake .. -G "Ninja"
+#             or cmake .. -G "Visual Studio 17 2022" -T host=x64 -A x64
+#
+# to build execute from build directory:
+#                  
+#                cmake --build .
+#             or ninja
+#            
 # ##############################################################################
+#]]
 
 cmake_minimum_required(VERSION 3.23)
 
 include(FetchContent)
 
-#
-# to use gcc-12 and g++-12 instead of default c / c++ (must come before project
-# line)
-#
+# to use gcc-12 and g++-12 (must come before project line)
 #[[
 # set(CMAKE_C_COMPILER "gcc-12")
 # set(CMAKE_CXX_COMPILER "g++-12")
 #]]
 
-#
-# project name (=identical to executable name)
-#
-project(qt-coordsys VERSION 0.1 LANGUAGES CXX)
+project(qt-coordsys
+        VERSION 0.1
+        LANGUAGES CXX)
 
 #
 # Compiler flags
@@ -63,10 +75,19 @@ endif()
 
 
 # However, the file(GLOB...) allows for wildcard additions:
-set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
-            src/coordsys_model.cpp src/w_statusbar.cpp)
-set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
-            include/coordsys_model.hpp include/w_statusbar.hpp)
+set(SOURCES src/main.cpp
+            src/coordsys.cpp
+            src/w_coordsys.cpp
+            src/w_cs_view.cpp
+            src/coordsys_model.cpp
+            src/w_statusbar.cpp
+            )
+set(HEADERS include/coordsys.hpp
+            include/w_coordsys.hpp
+            include/w_cs_view.hpp
+            include/coordsys_model.hpp
+            include/w_statusbar.hpp
+            )
 
 
 set(EXEC_NAME ${PROJECT_NAME})
