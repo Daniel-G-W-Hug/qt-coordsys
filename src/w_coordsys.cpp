@@ -391,7 +391,7 @@ void w_Coordsys::wheelEvent(QWheelEvent* event)
     // on MacOS two finger movement without pressing is also registered as
     // wheelEvent
 
-    if (event->isEndEvent())
+    if (event->isEndEvent())  // this currently works reliably only on Mac platform
     {
         // fmt::print("w_Coordsys::wheelEvent->isEndEvent()\n");
 
