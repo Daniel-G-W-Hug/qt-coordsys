@@ -22,9 +22,7 @@
 # ##############################################################################
 #]]
 
-cmake_minimum_required(VERSION 3.23)
-
-include(FetchContent)
+cmake_minimum_required(VERSION 3.25)
 
 # to use gcc-12 and g++-12 (must come before project line)
 #[[
@@ -32,23 +30,33 @@ include(FetchContent)
 # set(CMAKE_CXX_COMPILER "g++-12")
 #]]
 
+# CMAKE_TOOLCHAIN_FILE must be defined BEFORE project(...)!
+if(WIN32)
+  set(CMAKE_TOOLCHAIN_FILE "C:/Users/danie/prg/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake")
+else()
+  set(CMAKE_TOOLCHAIN_FILE "/Users/daniel/prg/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake")
+endif()
+
 project(
   qt-coordsys
   VERSION 0.1
   LANGUAGES CXX)
+
+# set(CMAKE_VERBOSE_MAKEFILE ON)  // alternative: make VERBOSE=1
+# add_definitions(-Dxxx)
+
+# make sure cmake is called with indication of CMAKE_TOOLCHAIN_FILE (vcpkg)
+# e.g. via .zshrc export CMAKE_TOOLCHAIN_FILE="/Users/daniel/prg/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  message(FATAL_ERROR
+          "CMAKE_TOOLCHAIN_FILE must be defined to use vcpkg. Configuration aborted.")
+endif()
 
 #
 # Compiler flags
 #
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# make fmt available
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG master)
-FetchContent_MakeAvailable(fmt)
 
 #
 # configure qt
@@ -98,5 +106,9 @@ find_package(
   COMPONENTS Widgets Gui
   REQUIRED)
 
-target_link_libraries(${EXEC_NAME} PRIVATE fmt::fmt-header-only Qt6::Widgets
+target_link_libraries(${EXEC_NAME} PRIVATE Qt6::Widgets
                                            Qt6::Gui)
+
+# make fmt available
+find_package(fmt CONFIG REQUIRED)
+target_link_libraries(${EXEC_NAME} PRIVATE fmt::fmt-header-only)
