@@ -90,11 +90,13 @@ target_include_directories(${EXEC_NAME}
 # Find the QtWidgets library
 find_package(
   Qt6
-  COMPONENTS Widgets Gui
+  COMPONENTS Core Gui Widgets 
   REQUIRED)
 
-target_link_libraries(${EXEC_NAME} PRIVATE Qt6::Widgets
-                                           Qt6::Gui)
+target_link_libraries(${EXEC_NAME} PRIVATE Qt6::Core
+                                           Qt6::Gui
+                                           Qt6::Widgets
+                                           )
 
 # make fmt available
 find_package(fmt CONFIG REQUIRED)

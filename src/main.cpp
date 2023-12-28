@@ -9,19 +9,11 @@
 
 Coordsys make_cs()
 {
-    axis_data ax(
-        axis_rng(-0.6, 1.6),
-        axis_dir::x,
-        axis_scal::linear,
-        "x label",
-        axis_ticks(0.0, 0.4, 4));
+    axis_data ax(axis_rng(-0.6, 1.6), axis_dir::x, axis_scal::linear, "x label",
+                 axis_ticks(0.0, 0.4, 4));
 
-    axis_data ay(
-        axis_rng(-0.2, 1.2),
-        axis_dir::y,
-        axis_scal::linear,
-        "y label",
-        axis_ticks(0.0, 0.2, 4));
+    axis_data ay(axis_rng(-0.2, 1.2), axis_dir::y, axis_scal::linear, "y label",
+                 axis_ticks(0.0, 0.2, 4));
 
     widget_axis_data wx(600, 60, 520);
     widget_axis_data wy(400, 50, 320);
@@ -71,8 +63,7 @@ Coordsys_model make_model()
         double dx = 0.01;
         double x_eps = 0.1 * dx;
 
-        while (x <= 1.5 + x_eps)
-        {
+        while (x <= 1.5 + x_eps) {
             l2.push_back(pt2d(x, hd::linear_step(0.0, 1.0, x)));
             x += dx;
         }
@@ -92,8 +83,7 @@ Coordsys_model make_model()
         double dx = 0.01;
         double x_eps = 0.1 * dx;
 
-        while (x <= 1.5 + x_eps)
-        {
+        while (x <= 1.5 + x_eps) {
             l2.push_back(pt2d(x, hd::smooth_step(0.0, 1.0, x)));
             x += dx;
         }
@@ -113,8 +103,7 @@ Coordsys_model make_model()
         double dx = 0.01;
         double x_eps = 0.1 * dx;
 
-        while (x <= 1.5 + x_eps)
-        {
+        while (x <= 1.5 + x_eps) {
             l2.push_back(pt2d(x, hd::smoother_step(0.0, 1.0, x)));
             x += dx;
         }
@@ -134,8 +123,7 @@ Coordsys_model make_model()
         double dx = 0.01;
         double x_eps = 0.1 * dx;
 
-        while (x <= .75 + x_eps)
-        {
+        while (x <= .75 + x_eps) {
             l2.push_back(pt2d(x, hd::smoother_step(0.0, 1.0, x)));
             x += dx;
         }
@@ -191,15 +179,13 @@ std::vector<Coordsys_model> make_vector_of_models()
     // es gelten: omega = 2*pi/T; f = 1/T; Wellenzahl k = 2*pi/lambda
     // Ausbreitungsgeschwindigkeit: c = lambda*f => c*T = lambda
 
-    for (double t = tmin; t <= tmax + t_eps; t += dt)
-    {
+    for (double t = tmin; t <= tmax + t_eps; t += dt) {
 
         // define a poly line and a model
         ln2d l;
         Coordsys_model cm;
 
-        for (double x = xmin; x <= xmax + x_eps; x += dx)
-        {
+        for (double x = xmin; x <= xmax + x_eps; x += dx) {
             l.push_back(pt2d(x, std::sin(omega * t - k * x)));
         }
 
@@ -218,8 +204,7 @@ std::vector<Coordsys_model> make_vector_of_models()
 int main(int argc, char* argv[])
 {
 
-    try
-    {
+    try {
         QApplication app(argc, argv);
 
         Coordsys cs = make_cs();
@@ -236,18 +221,16 @@ int main(int argc, char* argv[])
 
         // std::vector<Coordsys_model*> vm;
         // for (int i = 0; i < vmodels.size(); ++i) {
-        //   vm.push_back(&vmodels[i]);
+        //     vm.push_back(&vmodels[i]);
         // }
         // w_Cs_view window(&cs, vm);
 
-        // window.resize(600, 600);
         window.setWindowTitle("Coordsys");
         window.show();
 
         return app.exec();
     }
-    catch (const std::exception& e)
-    {
+    catch (const std::exception& e) {
         std::cout << e.what();
     }
 }

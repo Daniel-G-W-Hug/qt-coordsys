@@ -3,32 +3,21 @@
 #include "coordsys.hpp"
 #include "coordsys_model.hpp"
 
+#include <QGraphicsView>
 #include <QPainter>
 #include <QWidget>
 #include <QtWidgets>
 
 // pan, zoom and wheel_zoom actions
-enum class pz_action
-{
-    none,
-    pan,
-    zoom,
-    wheel_zoom
-};
+enum class pz_action { none, pan, zoom, wheel_zoom };
 
 // mode restriction for pan and zoom handling
 // x_and_y: no restriction
 // x_only:  restrict pan/zoom to x axis
 // y_only:  restrict pan/zoom to y axis
-enum class pz_mode
-{
-    x_and_y,
-    x_only,
-    y_only
-};
+enum class pz_mode { x_and_y, x_only, y_only };
 
-class w_Coordsys : public QWidget
-{
+class w_Coordsys : public QGraphicsView {
     Q_OBJECT
 
   public:
@@ -42,14 +31,17 @@ class w_Coordsys : public QWidget
   protected:
 
     void resizeEvent(QResizeEvent* event);
-    void paintEvent(QPaintEvent* event);
-    void draw(QPainter* qp);
+    // void paintEvent(QPaintEvent* event);
+    void drawBackground(QPainter* qp, const QRectF& rect);
+    void drawForeground(QPainter* qp, const QRectF& rect);
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
     void mousePressEvent(QMouseEvent* event);
     void mouseReleaseEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
+#if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent* event);
+#endif
 
     void push_to_history();  // for undo
     void pop_from_history(); // undo
@@ -58,7 +50,7 @@ class w_Coordsys : public QWidget
     void switch_to_model(int);
 
   signals:
-    void mouseMoved(bool hot, double x, double y);
+    void mouseMoved(bool hot, mouse_pos_t mouse_pos);
     void modeChanged(pz_action action, pz_mode mode);
     void undoChanged(int undo_steps);
     void labelChanged(std::string new_label);
@@ -66,12 +58,14 @@ class w_Coordsys : public QWidget
 
   private:
 
-    Coordsys* cs;
+    Coordsys* cs;                     // coordinate system
+    QGraphicsScene* scene;            // graphics scene
     Coordsys_model* cm;               // current modell
     std::vector<Coordsys_model*> vm;  // vector of models (owned externally)
                                       // that might be switched between
                                       // in case of several models
     std::vector<Coordsys> cs_history; // history of coordinate-systems (for undo)
+
 
     // mouse status
     int m_nx{0};                         // x-position of mouse in widget

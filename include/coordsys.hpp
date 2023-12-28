@@ -7,11 +7,16 @@
 #include <string>
 #include <vector>
 
+struct mouse_pos_t // mouse position in various systems
+{
+    int nx, ny;  // pos in device coordinate system
+    double x, y; // pos in coordinate system
+};
+
 struct axis_rng // range covered by axis from min to max
 {
     axis_rng() = default;
-    axis_rng(double min_in, double max_in) :
-        min{min_in}, max{max_in} {}
+    axis_rng(double min_in, double max_in) : min{min_in}, max{max_in} {}
     axis_rng(const axis_rng& other) = default;
     axis_rng& operator=(const axis_rng& other) = default;
     axis_rng(axis_rng&& other) = default;
@@ -27,18 +32,16 @@ enum axis_dir // direction of axis
     y
 };
 
-enum axis_scal
-{
-    linear,
-    logarithmic
-}; // tbd: date, time
+enum axis_scal { linear, logarithmic }; // tbd: date, time
 
 struct axis_ticks // tickmarks of axis
 {
 
     axis_ticks() = default;
     axis_ticks(double mj_anchor, double mj_delta, int mn_intv) :
-        major_anchor{mj_anchor}, major_delta{mj_delta}, minor_intervals{mn_intv} {}
+        major_anchor{mj_anchor}, major_delta{mj_delta}, minor_intervals{mn_intv}
+    {
+    }
     axis_ticks(const axis_ticks& other) = default;
     axis_ticks& operator=(const axis_ticks& other) = default;
     axis_ticks(axis_ticks&& other) = default;
@@ -62,12 +65,13 @@ struct axis_ticks // tickmarks of axis
                             // INFO: ignored for log scaled axis
 };
 
-struct widget_axis_data
-{
+struct widget_axis_data {
 
     widget_axis_data() = default;
     widget_axis_data(int widget_size, int axis_woffset, int axis_wlength) :
-        w_size{widget_size}, a_offset{axis_woffset}, a_length{axis_wlength} {}
+        w_size{widget_size}, a_offset{axis_woffset}, a_length{axis_wlength}
+    {
+    }
     widget_axis_data(const widget_axis_data& other) = default;
     widget_axis_data& operator=(const widget_axis_data& other) = default;
     widget_axis_data(widget_axis_data&& other) = default;
@@ -78,18 +82,15 @@ struct widget_axis_data
     int a_length{520};
 };
 
-struct axis_data
-{
+struct axis_data {
 
     axis_data() = default;
-    axis_data(
-        axis_rng a_rng,
-        axis_dir a_dir,
-        axis_scal a_scal,
-        std::string a_label,
-        axis_ticks a_ticks) :
+    axis_data(axis_rng a_rng, axis_dir a_dir, axis_scal a_scal, std::string a_label,
+              axis_ticks a_ticks) :
         rng{a_rng},
-        dir{a_dir}, scal{a_scal}, label{a_label}, ticks{a_ticks} {}
+        dir{a_dir}, scal{a_scal}, label{a_label}, ticks{a_ticks}
+    {
+    }
     axis_data(const axis_data& other) = default;
     axis_data& operator=(const axis_data& other) = default;
     axis_data(axis_data&& other) = default;
@@ -120,12 +121,10 @@ class Axis // defines axis and scaling transformation to paint device
 
     Axis(widget_axis_data wd_in, axis_data ad_in);
 
-    int a_to_w(
-        double scaled_value) const; // (scaled) axis to widget transformation
-    int au_to_w(
-        double unscaled_value) const; // unscaled axis to widget transformation
-    double w_to_a(int npos) const;    // widget to (scaled) axis transformation
-    double w_to_au(int npos) const;   // widget to unscaled axis transformation
+    int a_to_w(double scaled_value) const;    // (scaled) axis to widget transformation
+    int au_to_w(double unscaled_value) const; // unscaled axis to widget transformation
+    double w_to_a(int npos) const;            // widget to (scaled) axis transformation
+    double w_to_au(int npos) const;           // widget to unscaled axis transformation
 
     void draw(QPainter* qp, int offset);
 
@@ -156,11 +155,9 @@ class Axis // defines axis and scaling transformation to paint device
                // length and direction on paint device
 };
 
-struct coordsys_data
-{
+struct coordsys_data {
     coordsys_data() = default;
-    coordsys_data(std::string title_in) :
-        title{title_in} {}
+    coordsys_data(std::string title_in) : title{title_in} {}
     coordsys_data(const coordsys_data& other) = default;
     coordsys_data& operator=(const coordsys_data& other) = default;
     coordsys_data(coordsys_data&& other) = default;
@@ -173,8 +170,7 @@ struct coordsys_data
     double y_rng_major_delta_target_ratio{};
 };
 
-class Coordsys
-{
+class Coordsys {
   public:
 
     Coordsys(Axis x_in, Axis y_in, coordsys_data cd_in);
@@ -188,9 +184,8 @@ class Coordsys
     void adjust_to_pan(double dx, double dy);
     void adjust_to_zoom(double new_xmin, double new_xmax, double new_ymin,
                         double new_ymax);
-    void adjust_to_wheel_zoom(double new_xmin, double new_xmax,
-                              double new_ymin, double new_ymax,
-                              double xtarget_ratio,
+    void adjust_to_wheel_zoom(double new_xmin, double new_xmax, double new_ymin,
+                              double new_ymax, double xtarget_ratio,
                               double ytarget_ratio);
 
     Axis x;
@@ -200,8 +195,7 @@ class Coordsys
 
     double get_new_delta(double min, double max, double delta, double new_min,
                          double new_max);
-    double get_new_delta_wheel_zoom(double new_min, double new_max,
-                                    double delta,
+    double get_new_delta_wheel_zoom(double new_min, double new_max, double delta,
                                     double target_ratio);
 
   private:
