@@ -71,9 +71,9 @@ endif()
 
 # However, the file(GLOB...) allows for wildcard additions:
 set(SOURCES src/main.cpp src/coordsys.cpp src/w_coordsys.cpp src/w_cs_view.cpp
-            src/coordsys_model.cpp src/w_statusbar.cpp)
+            src/coordsys_model.cpp src/w_statusbar.cpp src/active_pt2d.cpp)
 set(HEADERS include/coordsys.hpp include/w_coordsys.hpp include/w_cs_view.hpp
-            include/coordsys_model.hpp include/w_statusbar.hpp)
+            include/coordsys_model.hpp include/w_statusbar.hpp include/active_pt2d.hpp)
 
 set(EXEC_NAME ${PROJECT_NAME})
 add_executable(${EXEC_NAME} ${SOURCES} ${HEADERS})

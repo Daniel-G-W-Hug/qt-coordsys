@@ -1,4 +1,6 @@
 #include "w_coordsys.hpp"
+#include "active_pt2d.hpp"
+
 #include <QCursor>
 #include <QPainter>
 #include <QPalette>
@@ -14,20 +16,25 @@ w_Coordsys::w_Coordsys(Coordsys* cs, Coordsys_model* cm, QWidget* parent) :
 {
 
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
+
     scene->setSceneRect(0, 0, cs->x.widget_size(), cs->y.widget_size());
+
+    // scene->setSceneRect(cs->x.w_to_au(0), cs->y.w_to_au(0),
+    //                     cs->x.w_to_au(cs->x.widget_size()),
+    //                     -(cs->y.w_to_au(0) - cs->y.w_to_au(cs->y.widget_size())));
+
+    // fmt::print("SceneRect: {},{},{},{}\n", cs->x.w_to_au(0), cs->y.w_to_au(0),
+    //            cs->x.w_to_au(cs->x.widget_size()),
+    //            -(cs->y.w_to_au(0) - cs->y.w_to_au(cs->y.widget_size())));
+
     setScene(scene);
     setCacheMode(CacheBackground);
-    // setViewportUpdateMode(BoundingRectViewportUpdate);
     setViewportUpdateMode(FullViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
-    // setDragMode(QGraphicsView::ScrollHandDrag);
     setTransformationAnchor(AnchorUnderMouse);
     setMinimumSize(cs->x.widget_size(), cs->y.widget_size());
-
     // setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     // setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    scene->addLine(QLine(50, 50, 200, 200));
 
     // store current model ptr in list of models (in case other models are added
     // later)
@@ -41,6 +48,12 @@ w_Coordsys::w_Coordsys(Coordsys* cs, Coordsys_model* cm, QWidget* parent) :
     setMouseTracking(true);
     // Accept KeyPress and KeyRelease Events
     setFocusPolicy(Qt::StrongFocus);
+
+
+    // place an active point on the scene at 0,1
+    active_pt2d* ap1 = new active_pt2d(this);
+    scene->addItem(ap1);
+    ap1->setPos(cs->x.a_to_w(0), cs->y.a_to_w(1));
 }
 
 w_Coordsys::w_Coordsys(Coordsys* cs, const std::vector<Coordsys_model*> vm,
@@ -53,17 +66,12 @@ w_Coordsys::w_Coordsys(Coordsys* cs, const std::vector<Coordsys_model*> vm,
     scene->setSceneRect(0, 0, cs->x.widget_size(), cs->y.widget_size());
     setScene(scene);
     setCacheMode(CacheBackground);
-    // setCacheMode(CacheNone);
-    setViewportUpdateMode(BoundingRectViewportUpdate);
+    setViewportUpdateMode(FullViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
-    // setDragMode(QGraphicsView::ScrollHandDrag);
     setTransformationAnchor(AnchorUnderMouse);
     setMinimumSize(cs->x.widget_size(), cs->y.widget_size());
-
     // setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     // setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    scene->addLine(QLine(50, 50, 200, 200));
 
     // set current model ptr to first entry
     cm = vm[0];
@@ -87,14 +95,6 @@ void w_Coordsys::resizeEvent(QResizeEvent* event)
         scene->setSceneRect(0, 0, cs->x.widget_size(), cs->y.widget_size());
     }
 }
-
-// void w_Coordsys::paintEvent(QPaintEvent* e)
-// {
-//     Q_UNUSED(e);
-//     QPainter qp(this);
-//     qp.setRenderHint(QPainter::Antialiasing);
-//     drawBackground(&qp, scene->sceneRect());
-// }
 
 void w_Coordsys::drawBackground(QPainter* qp, const QRectF& rect)
 {
