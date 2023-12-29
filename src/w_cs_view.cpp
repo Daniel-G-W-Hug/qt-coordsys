@@ -7,8 +7,7 @@
 
 #include <cmath> // for axis scaling (and mathematical functions)
 
-w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent) :
-    QWidget(parent)
+w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent) : QWidget(parent)
 {
 
     // set white as background color
@@ -32,8 +31,8 @@ w_Cs_view::w_Cs_view(Coordsys* cs, Coordsys_model* cm, QWidget* parent) :
     setLayout(layout);
 
     // link coordsys to statusbar
-    connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
-            SLOT(on_mouseMoved(bool, double, double)));
+    connect(wcs, SIGNAL(mouseMoved(bool, mouse_pos_t)), wsb,
+            SLOT(on_mouseMoved(bool, mouse_pos_t)));
     connect(wcs, SIGNAL(modeChanged(pz_action, pz_mode)), wsb,
             SLOT(on_modeChanged(pz_action, pz_mode)));
     connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));
@@ -65,8 +64,7 @@ w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
     wsb = new w_Statusbar(cs->x.widget_size(), this);
 
     slider = new QSlider(Qt::Horizontal, this);
-    slider->setRange(0, vm.size() -
-                            1); // only allow to switch between existing models
+    slider->setRange(0, vm.size() - 1); // only allow to switch between existing models
 
     w1 = new QGroupBox;
     // w1->setFlat(true);
@@ -86,8 +84,8 @@ w_Cs_view::w_Cs_view(Coordsys* cs, const std::vector<Coordsys_model*> vm,
     connect(slider, SIGNAL(valueChanged(int)), wcs, SLOT(switch_to_model(int)));
     connect(slider, SIGNAL(valueChanged(int)), wsb, SLOT(on_modelChanged(int)));
     // link coordsys to statusbar
-    connect(wcs, SIGNAL(mouseMoved(bool, double, double)), wsb,
-            SLOT(on_mouseMoved(bool, double, double)));
+    connect(wcs, SIGNAL(mouseMoved(bool, mouse_pos_t)), wsb,
+            SLOT(on_mouseMoved(bool, mouse_pos_t)));
     connect(wcs, SIGNAL(modeChanged(pz_action, pz_mode)), wsb,
             SLOT(on_modeChanged(pz_action, pz_mode)));
     connect(wcs, SIGNAL(undoChanged(int)), wsb, SLOT(on_undoChanged(int)));

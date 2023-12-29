@@ -8,8 +8,7 @@
 #include <QWidget>
 #include <QtWidgets>
 
-class w_Statusbar : public QWidget
-{
+class w_Statusbar : public QWidget {
     Q_OBJECT
 
   public:
@@ -26,7 +25,7 @@ class w_Statusbar : public QWidget
 
     // mouse within (min...max) (true) or not (false) cs area, current position is
     // x, y
-    void on_mouseMoved(bool hot, double x, double y);
+    void on_mouseMoved(bool hot, mouse_pos_t mouse_pos);
     void on_modelChanged(int step);
     void on_modeChanged(pz_action action, pz_mode mode);
     void on_undoChanged(int undo_steps);
@@ -42,6 +41,7 @@ class w_Statusbar : public QWidget
 
     // mouse position within coordsys
     bool m_hot;      // mouse is within cs area
+    int m_nx, m_ny;  // mouse position in device coordinates
     double m_x, m_y; // mouse position in cs
 
     // model step (default: show first step)

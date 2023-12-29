@@ -7,8 +7,7 @@
 
 #include <cmath> // for axis scaling (and mathematical functions)
 
-w_Statusbar::w_Statusbar(int width, QWidget* parent) :
-    QWidget(parent), w_width(width)
+w_Statusbar::w_Statusbar(int width, QWidget* parent) : QWidget(parent), w_width(width)
 {
 
     setMinimumSize(w_width, w_height);
@@ -20,8 +19,7 @@ void w_Statusbar::resizeEvent(QResizeEvent* event)
 {
     QSize currentSize = event->size();
     // only update changed width since heigth is kept constant
-    if (currentSize.width() != w_width)
-    {
+    if (currentSize.width() != w_width) {
         w_width = currentSize.width();
     }
 }
@@ -59,102 +57,98 @@ void w_Statusbar::draw(QPainter* qp)
 
     // print current pan and zoom modes
     QString m;
-    switch (m_mode)
-    {
-    case pz_mode::x_and_y:
+    switch (m_mode) {
+        case pz_mode::x_and_y:
 
-        switch (m_action)
-        {
-        case pz_action::none:
-            m = QString("Mode: X & Y");
+            switch (m_action) {
+                case pz_action::none:
+                    m = QString("Mode: X & Y");
+                    break;
+                case pz_action::pan:
+                    m = QString("Pan: X & Y");
+                    break;
+                case pz_action::zoom:
+                    m = QString("Zoom: X & Y");
+                    break;
+                case pz_action::wheel_zoom:
+                    m = QString("Wheel Zoom: X & Y");
+                    break;
+            }
             break;
-        case pz_action::pan:
-            m = QString("Pan: X & Y");
-            break;
-        case pz_action::zoom:
-            m = QString("Zoom: X & Y");
-            break;
-        case pz_action::wheel_zoom:
-            m = QString("Wheel Zoom: X & Y");
-            break;
-        }
-        break;
 
-    case pz_mode::x_only:
+        case pz_mode::x_only:
 
-        switch (m_action)
-        {
-        case pz_action::none:
-            m = QString("Mode: X");
+            switch (m_action) {
+                case pz_action::none:
+                    m = QString("Mode: X");
+                    break;
+                case pz_action::pan:
+                    m = QString("Pan: X");
+                    break;
+                case pz_action::zoom:
+                    m = QString("Zoom: X");
+                    break;
+                case pz_action::wheel_zoom:
+                    m = QString("Wheel Zoom: X");
+                    break;
+            }
             break;
-        case pz_action::pan:
-            m = QString("Pan: X");
-            break;
-        case pz_action::zoom:
-            m = QString("Zoom: X");
-            break;
-        case pz_action::wheel_zoom:
-            m = QString("Wheel Zoom: X");
-            break;
-        }
-        break;
 
-    case pz_mode::y_only:
-        switch (m_action)
-        {
-        case pz_action::none:
-            m = QString("Mode: Y");
+        case pz_mode::y_only:
+            switch (m_action) {
+                case pz_action::none:
+                    m = QString("Mode: Y");
+                    break;
+                case pz_action::pan:
+                    m = QString("Pan: Y");
+                    break;
+                case pz_action::zoom:
+                    m = QString("Zoom: Y");
+                    break;
+                case pz_action::wheel_zoom:
+                    m = QString("Wheel Zoom: Y");
+                    break;
+            }
             break;
-        case pz_action::pan:
-            m = QString("Pan: Y");
-            break;
-        case pz_action::zoom:
-            m = QString("Zoom: Y");
-            break;
-        case pz_action::wheel_zoom:
-            m = QString("Wheel Zoom: Y");
-            break;
-        }
-        break;
     }
     qp->drawText(border_dist + undo_len + 15, nypos, m);
 
-    // print (x,y)-Position of mouse pointer in hot area
+    // print pixel position of mouse cursor
+    QString nx = QString::number(m_nx);
+    QString ny = QString::number(m_ny);
+    QString s = QString("(nx = ") + nx + QString(", ny = ") + ny + QString(")");
+
+    // print (x,y)-Position of mouse pointer additionally, if in hot area
     // data must be send as scaled data for logarithmic scaling
-    if (m_hot)
-    {
+    if (m_hot) {
         QString x = QString::number(m_x, 'g', 3);
         QString y = QString::number(m_y, 'g', 3);
-
         QString s1;
-        switch (m_xscaling)
-        {
-        case axis_scal::linear:
-            s1 = QString("(x = ") + x;
-            break;
-        case axis_scal::logarithmic:
-            s1 = QString("(log10(x) = ") + x;
-            break;
+        switch (m_xscaling) {
+            case axis_scal::linear:
+                s1 = s + QString(" (x = ") + x;
+                break;
+            case axis_scal::logarithmic:
+                s1 = s + QString(" (log10(x) = ") + x;
+                break;
         }
         QString s2;
-        switch (m_yscaling)
-        {
-        case axis_scal::linear:
-            s2 = QString(", y = ") + y + QString(")");
-            break;
-        case axis_scal::logarithmic:
-            s2 = QString(", log10(y) = ") + y + QString(")");
-            break;
+        switch (m_yscaling) {
+            case axis_scal::linear:
+                s2 = QString(", y = ") + y + QString(")");
+                break;
+            case axis_scal::logarithmic:
+                s2 = QString(", log10(y) = ") + y + QString(")");
+                break;
         }
 
-        QString s = s1 + s2;
-        qp->drawText(w_width / 2 - fm.horizontalAdvance(s) / 2, nypos, s);
+        s = s1 + s2;
     }
+    qp->drawText(w_width / 2 - fm.horizontalAdvance(s) / 2, nypos, s);
 
     // print index and (if present) label of currently displayed model
     QString step = QString("Model: ") + QString::number(m_step);
-    if (m_label != "")
-    {
+    if (m_label != "") {
         step += QString("  Label: ") + m_label.c_str();
     }
     qp->drawText(w_width - fm.horizontalAdvance(step) - border_dist, nypos, step);
@@ -162,16 +156,18 @@ void w_Statusbar::draw(QPainter* qp)
     qp->restore();
 }
 
-void w_Statusbar::on_mouseMoved(bool hot, double x, double y)
+void w_Statusbar::on_mouseMoved(bool hot, mouse_pos_t mouse_pos)
 {
 
-    if (m_x != x || m_y != y || m_hot != hot)
-    {
+    if (m_hot != hot || m_nx != mouse_pos.nx || m_ny != mouse_pos.ny ||
+        m_x != mouse_pos.x || m_y != mouse_pos.y) {
         // update only if any value has changed
-        // fmt::print("received event: {} {} {}\n", hot, x, y);
+        // fmt::print("received event: {} {} {} {} {}\n", hot, nx, ny, x, y);
         m_hot = hot;
-        m_x = x;
-        m_y = y;
+        m_nx = mouse_pos.nx;
+        m_ny = mouse_pos.ny;
+        m_x = mouse_pos.x;
+        m_y = mouse_pos.y;
         update();
     }
 }
@@ -179,8 +175,7 @@ void w_Statusbar::on_mouseMoved(bool hot, double x, double y)
 void w_Statusbar::on_modelChanged(int step)
 {
 
-    if (m_step != step)
-    {
+    if (m_step != step) {
         // update only if any value has changed
         // fmt::print("received modelChanged event: {}\n", step);
         m_step = step;
@@ -191,8 +186,7 @@ void w_Statusbar::on_modelChanged(int step)
 void w_Statusbar::on_modeChanged(pz_action action, pz_mode mode)
 {
 
-    if (m_action != action || m_mode != mode)
-    {
+    if (m_action != action || m_mode != mode) {
         // update only if any value has changed
         // fmt::print("received modeChanged event.\n");
         m_action = action;
@@ -204,8 +198,7 @@ void w_Statusbar::on_modeChanged(pz_action action, pz_mode mode)
 void w_Statusbar::on_undoChanged(int undo_steps)
 {
 
-    if (m_undo_steps != undo_steps)
-    {
+    if (m_undo_steps != undo_steps) {
         // update only if any value has changed
         // fmt::print("received undoChanged event: {}\n", undo_steps);
         m_undo_steps = undo_steps;
@@ -216,8 +209,7 @@ void w_Statusbar::on_undoChanged(int undo_steps)
 void w_Statusbar::on_labelChanged(std::string label)
 {
 
-    if (m_label != label)
-    {
+    if (m_label != label) {
         // update only if any value has changed
         // fmt::print("received labelChanged event: {}\n", label);
         m_label = label;
@@ -228,8 +220,7 @@ void w_Statusbar::on_labelChanged(std::string label)
 void w_Statusbar::on_scalingChanged(axis_scal xscal, axis_scal yscal)
 {
 
-    if (m_xscaling != xscal || m_yscaling != yscal)
-    {
+    if (m_xscaling != xscal || m_yscaling != yscal) {
         // update only if any value has changed
         // fmt::print("received scalingChanged event.\n");
         m_xscaling = xscal;
